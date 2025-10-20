@@ -1,12 +1,17 @@
 import nodemailer from 'nodemailer';
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  logger: true,
+  debug: true,
 });
+
 
 export const sendVerificationEmail = async (email, token) => {
   const verificationUrl = `${process.env.CLIENT_URL}/api/auth/verify/${token}`;
@@ -23,5 +28,9 @@ export const sendVerificationEmail = async (email, token) => {
     console.log('Verification email sent');
   } catch (error) {
     console.error('Error sending verification email:', error);
+    return Promise.reject({
+      statusCode: 400,
+      message: 'Error sending verification email:'
+    })
   }
 };
