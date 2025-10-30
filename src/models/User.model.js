@@ -9,6 +9,15 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    name: {
+      type: String,
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['free', 'pro', 'unlimited'],
+      default: 'free',
+    },
     password: {
       type: String,
       required: true,
@@ -16,6 +25,10 @@ const userSchema = new mongoose.Schema(
     verified: {
       type: Boolean,
       default: false,
+    },
+    lastVerificationEmailSent: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }
