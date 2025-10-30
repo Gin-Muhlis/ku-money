@@ -16,11 +16,13 @@ import { refreshTokenMiddleware } from '../middlewares/auth/refreshToken.middlew
 import { validate } from '../middlewares/validator.middleware.js';
 
 // DTO imports
-import { registerDto } from '../dto/register.dto.js';
-import { loginDto } from '../dto/login.dto.js';
-import { refreshDto } from '../dto/refresh.dto.js';
-import { verifyEmailDto } from '../dto/verifyEmail.dto.js';
-import { resendVerificationDto } from '../dto/resendVerification.dto.js';
+import { 
+  registerDto, 
+  loginDto, 
+  refreshDto, 
+  verifyEmailDto, 
+  resendVerificationDto 
+} from '../dto/auth.dto.js';
 
 const router = express.Router();
 

@@ -1,5 +1,8 @@
 import Joi from 'joi';
 
+/**
+ * DTO for creating order
+ */
 export const createOrderDto = Joi.object({
   packageId: Joi.string()
     .required()

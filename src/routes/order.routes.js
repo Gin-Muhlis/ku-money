@@ -11,7 +11,7 @@ import { authMiddleware } from '../middlewares/auth/auth.middleware.js';
 import { validate } from '../middlewares/validator.middleware.js';
 
 // DTO imports
-import { createOrderDto } from '../dto/createOrder.dto.js';
+import { createOrderDto } from '../dto/order.dto.js';
 
 const router = express.Router();
 

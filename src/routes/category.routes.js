@@ -13,8 +13,7 @@ import { checkCategoryLimit } from '../middlewares/checkCategoryLimit.middleware
 import { validate } from '../middlewares/validator.middleware.js';
 
 // DTO imports
-import { createCategoryDto } from '../dto/createCategory.dto.js';
-import { updateCategoryDto } from '../dto/updateCategory.dto.js';
+import { createCategoryDto, updateCategoryDto } from '../dto/category.dto.js';
 
 const router = express.Router();
 

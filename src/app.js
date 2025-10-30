@@ -4,6 +4,7 @@ import authRoutes from './routes/auth.routes.js';
 import packageRoutes from './routes/package.routes.js';
 import orderRoutes from './routes/order.routes.js';
 import categoryRoutes from './routes/category.routes.js';
+import accountRoutes from './routes/account.routes.js';
 
 const app = express();
 
@@ -20,5 +21,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/accounts', accountRoutes);
 
 export default app;
