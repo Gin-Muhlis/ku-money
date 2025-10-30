@@ -4,9 +4,11 @@ import {
   login,
   logout,
   refresh,
+} from '../controllers/auth/auth.controller.js';
+import {
   verifyEmail,
   resendVerificationEmail,
-} from '../controllers/auth.controller.js';
+} from '../controllers/auth/verifyEmail.controller.js';
 
 // Middleware imports
 import { authMiddleware } from '../middlewares/auth/auth.middleware.js';

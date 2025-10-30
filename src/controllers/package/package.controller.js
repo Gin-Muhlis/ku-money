@@ -1,8 +1,11 @@
-import SubscriptionPackage from '../models/SubscriptionPackage.model.js';
+import * as packageDatasource from '../../datasource/subscriptionPackage.datasource.js';
 
+/**
+ * Get all subscription packages
+ */
 export const getPackages = async (req, res) => {
   try {
-    const packages = await SubscriptionPackage.find();
+    const packages = await packageDatasource.findAllPackages();
     
     res.status(200).json({
       data: packages,

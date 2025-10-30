@@ -1,20 +1,24 @@
 import bcrypt from 'bcrypt';
-import User from '../models/User.model.js';
-import UserAccess from '../models/UserAccess.model.js';
 import {
   generateAccessToken,
   generateRefreshToken,
   generateEmailToken,
-  verifyToken,
-} from '../utils/token.js';
-import { sendVerificationEmail } from '../services/email.service.js';
+} from '../../utils/token.js';
+import { sendVerificationEmail } from '../../services/email.service.js';
+import * as userDatasource from '../../datasource/user.datasource.js';
+import * as userAccessDatasource from '../../datasource/userAccess.datasource.js';
+import * as subscriptionDatasource from '../../datasource/subscription.datasource.js';
+import * as packageDatasource from '../../datasource/subscriptionPackage.datasource.js';
 
+/**
+ * Register new user
+ */
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
     // Cek apakah email sudah terdaftar
-    const existingUser = await User.findOne({ email });
+    const existingUser = await userDatasource.findUserByEmail(email);
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -23,14 +27,40 @@ export const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Simpan user ke database
-    const user = new User({
+    const user = await userDatasource.createUser({
       email,
       name,
       status: 'free',
       password: hashedPassword,
     });
 
-    await user.save();
+    // Ambil data package "free" dari subscription-packages
+    const freePackage = await packageDatasource.findPackageByName('free');
+
+    if (!freePackage) {
+      return res.status(500).json({ 
+        message: 'Free package not found. Please contact administrator.' 
+      });
+    }
+
+    // Buat subscription untuk user dengan package free
+    // Set expiredAt 100 tahun dari sekarang (practically unlimited untuk free package)
+    const expiredAt = new Date();
+    expiredAt.setFullYear(expiredAt.getFullYear() + 100);
+
+    await subscriptionDatasource.createSubscription({
+      expiredAt: expiredAt,
+      createdBy: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+      isActive: true,
+      limitCategory: freePackage.category,
+      limitIncomes: freePackage.incomes,
+      limitExpenses: freePackage.expenses,
+      limitAccount: freePackage.account,
+    });
 
     const payload = {
       id: user._id,
@@ -45,15 +75,14 @@ export const register = async (req, res) => {
     await sendVerificationEmail(email, emailToken);
 
     // Update last verification email sent timestamp
-    user.lastVerificationEmailSent = new Date();
-    await user.save();
+    await userDatasource.updateLastVerificationEmailSent(user._id, new Date());
 
     // Generate access token & refresh token
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
     // Simpan refresh token ke database (collection: user-access)
-    await UserAccess.create({
+    await userAccessDatasource.createUserAccess({
       user: {
         _id: user._id,
         email: user.email,
@@ -78,37 +107,14 @@ export const register = async (req, res) => {
   }
 };
 
-export const verifyEmail = async (req, res) => {
-  const { token } = req.body;
-
-  try {
-    const decoded = verifyToken(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid token' });
-    }
-
-    if (user.verified) {
-      return res.status(400).json({ message: 'Email already verified' });
-    }
-
-    user.verified = true;
-    await user.save();
-
-    res.status(200).json({ isVerified: true });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-
-    res.status(500).json({ message: error.message });
-  }
-};
-
+/**
+ * Login user
+ */
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const user = await userDatasource.findUserByEmail(email);
 
     if (!user) {
       return res.status(400).json({ message: 'email is not registered' });
@@ -148,25 +154,20 @@ export const login = async (req, res) => {
     const refreshToken = generateRefreshToken(payload);
 
     // Cari apakah user sudah punya refresh token sebelumnya
-    const existingAccess = await UserAccess.findOne({ 'user._id': user._id });
+    const existingAccess = await userAccessDatasource.findUserAccessByUserId(user._id);
 
     if (existingAccess) {
-      // Update refresh token yang sudah ada (upsert based on old refreshToken)
-      await UserAccess.updateOne(
-        { refreshToken: existingAccess.refreshToken },
-        {
-          refreshToken: refreshToken,
-          'user.userAgent': userAgent,
-          updatedAt: new Date(),
-        }
+      // Update refresh token yang sudah ada
+      await userAccessDatasource.updateRefreshToken(
+        existingAccess.refreshToken,
+        refreshToken
       );
     } else {
       // Buat entry baru jika belum ada
-      await UserAccess.create({
+      await userAccessDatasource.createUserAccess({
         user: {
           _id: user._id,
           email: user.email,
-          userAgent: userAgent,
         },
         refreshToken: refreshToken,
       });
@@ -188,6 +189,9 @@ export const login = async (req, res) => {
   }
 };
 
+/**
+ * Refresh access token
+ */
 export const refresh = async (req, res) => {
   try {
     // User data sudah divalidasi dan di-decode oleh refreshTokenMiddleware
@@ -195,7 +199,7 @@ export const refresh = async (req, res) => {
     const oldRefreshToken = req.refreshToken;
 
     // Get user data from database (sudah divalidasi di middleware)
-    const user = await User.findById(req.user.id);
+    const user = await userDatasource.findUserById(req.user.id);
 
     const payload = {
       id: user._id,
@@ -211,13 +215,10 @@ export const refresh = async (req, res) => {
 
     // Update refresh token di database
     const userAgent = req.headers['user-agent'] || 'unknown';
-    await UserAccess.updateOne(
-      { refreshToken: oldRefreshToken },
-      { 
-        refreshToken: newRefreshToken,
-        'user.userAgent': userAgent,
-        updatedAt: new Date()
-      }
+    await userAccessDatasource.updateRefreshToken(
+      oldRefreshToken,
+      newRefreshToken,
+      userAgent
     );
 
     res.status(200).json({ 
@@ -236,6 +237,9 @@ export const refresh = async (req, res) => {
   }
 };
 
+/**
+ * Logout user
+ */
 export const logout = async (req, res) => {
   try {
     // Get refresh token from body 
@@ -249,7 +253,7 @@ export const logout = async (req, res) => {
     }
 
     // Delete refresh token dari database
-    const result = await UserAccess.deleteOne({ refreshToken });
+    const result = await userAccessDatasource.deleteUserAccessByRefreshToken(refreshToken);
 
     if (result.deletedCount === 0) {
       return res.status(404).json({ 
@@ -260,61 +264,10 @@ export const logout = async (req, res) => {
     
     res.status(200).json({ 
       message: 'Logged out successfully',
-      user: req.user.email // Optional: show who logged out
+      user: req.user.email
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-export const resendVerificationEmail = async (req, res) => {
-  const { email } = req.body;
-
-  try {
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (user.verified) {
-      return res.status(400).json({ message: 'Email already verified' });
-    }
-
-    // Rate limiting check - 1 request per minute
-    const now = new Date();
-    if (user.lastVerificationEmailSent) {
-      const timeDiff = now - user.lastVerificationEmailSent;
-      const oneMinute = 60 * 1000; // 60 seconds in milliseconds
-
-      if (timeDiff < oneMinute) {
-        const remainingSeconds = Math.ceil((oneMinute - timeDiff) / 1000);
-        return res.status(429).json({ 
-          message: `Please wait ${remainingSeconds} seconds before requesting another verification email`,
-          code: 'RATE_LIMIT_EXCEEDED',
-          remainingSeconds
-        });
-      }
-    }
-
-    // Generate new token and send email
-    const payload = {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      status: user.status,
-      verified: user.verified,
-    };
-
-    const emailToken = generateEmailToken(payload);
-    await sendVerificationEmail(email, emailToken);
-
-    // Update last sent timestamp
-    user.lastVerificationEmailSent = now;
-    await user.save();
-
-    res.status(200).json({ message: 'Verification email sent successfully' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};

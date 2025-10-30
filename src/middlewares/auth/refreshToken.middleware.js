@@ -1,5 +1,5 @@
-import UserAccess from '../../models/UserAccess.model.js';
-import User from '../../models/User.model.js';
+import * as userAccessDatasource from '../../datasource/userAccess.datasource.js';
+import * as userDatasource from '../../datasource/user.datasource.js';
 
 export const refreshTokenMiddleware = async (req, res, next) => {
   try {
@@ -14,7 +14,7 @@ export const refreshTokenMiddleware = async (req, res, next) => {
     }
 
     // Cek token di database (collection: user-access)
-    const userAccess = await UserAccess.findOne({ refreshToken });
+    const userAccess = await userAccessDatasource.findUserAccessByRefreshToken(refreshToken);
 
     if (!userAccess) {
       return res.status(403).json({ 
@@ -24,7 +24,7 @@ export const refreshTokenMiddleware = async (req, res, next) => {
     }
 
     // Ambil user dari database berdasarkan user._id
-    const user = await User.findById(userAccess.user._id);
+    const user = await userDatasource.findUserById(userAccess.user._id);
 
     if (!user) {
       return res.status(403).json({ 
