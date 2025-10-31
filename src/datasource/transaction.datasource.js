@@ -201,3 +201,46 @@ export const updateAccountSnapshot = async (accountId, snapshotName) => {
   );
 };
 
+/**
+ * Calculate total amount by category ID for a user
+ */
+export const getTotalAmountByCategoryId = async (userId, categoryId) => {
+  const transactions = await Transaction.find({
+    'createdBy._id': userId,
+    categoryId: categoryId,
+  });
+
+  // Sum all amounts
+  const totalAmount = transactions.reduce((sum, transaction) => {
+    return sum + (transaction.amount || 0);
+  }, 0);
+
+  return totalAmount;
+};
+
+/**
+ * Calculate total amounts for multiple categories
+ */
+export const getTotalAmountsByCategoryIds = async (userId, categoryIds) => {
+  if (!categoryIds || categoryIds.length === 0) {
+    return {};
+  }
+
+  const transactions = await Transaction.find({
+    'createdBy._id': userId,
+    categoryId: { $in: categoryIds },
+  });
+
+  // Group by categoryId and sum amounts
+  const amountsByCategory = transactions.reduce((acc, transaction) => {
+    const categoryId = transaction.categoryId.toString();
+    if (!acc[categoryId]) {
+      acc[categoryId] = 0;
+    }
+    acc[categoryId] += transaction.amount || 0;
+    return acc;
+  }, {});
+
+  return amountsByCategory;
+};
+

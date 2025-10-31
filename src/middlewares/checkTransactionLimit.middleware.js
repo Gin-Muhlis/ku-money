@@ -76,14 +76,6 @@ export const checkTransactionLimit = async (req, res, next) => {
       });
     }
 
-    // Attach info to request
-    req.transactionLimit = {
-      type: categoryType,
-      limit: limit,
-      currentCount: currentCount,
-      remaining: limit - currentCount,
-    };
-
     next();
   } catch (error) {
     console.error('Check Transaction Limit Error:', error);

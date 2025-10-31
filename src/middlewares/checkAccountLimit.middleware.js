@@ -39,14 +39,7 @@ export const checkAccountLimit = async (req, res, next) => {
         current: currentAccountCount,
       });
     }
-
-    // Attach subscription info to request for potential use in controller
-    req.subscription = {
-      limitAccount: accountLimit,
-      currentCount: currentAccountCount,
-      remaining: accountLimit - currentAccountCount,
-    };
-
+    
     next();
   } catch (error) {
     console.error('Check Account Limit Error:', error);

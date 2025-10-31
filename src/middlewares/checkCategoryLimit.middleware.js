@@ -40,13 +40,6 @@ export const checkCategoryLimit = async (req, res, next) => {
       });
     }
 
-    // Attach subscription info to request for potential use in controller
-    req.subscription = {
-      limitCategory: categoryLimit,
-      currentCount: currentCategoryCount,
-      remaining: categoryLimit - currentCategoryCount,
-    };
-
     next();
   } catch (error) {
     console.error('Check Category Limit Error:', error);

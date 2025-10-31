@@ -46,9 +46,29 @@ export const getCategories = async (req, res) => {
       { type }
     );
 
+    // Get category IDs to calculate total amounts
+    const categoryIds = categories.map(cat => cat._id);
+
+    // Get total amounts for all categories
+    const amountsByCategory = await transactionDatasource.getTotalAmountsByCategoryIds(
+      req.user.id,
+      categoryIds
+    );
+
+    // Map categories with amount
+    const categoriesWithAmount = categories.map(category => {
+      const categoryId = category._id.toString();
+      const amount = amountsByCategory[categoryId] || 0;
+
+      return {
+        ...category.toObject(),
+        amount: amount,
+      };
+    });
+
     res.status(200).json({
-      data: categories,
-      total: categories.length,
+      data: categoriesWithAmount,
+      total: categoriesWithAmount.length,
     });
   } catch (error) {
     console.error('Get Categories Error:', error);
