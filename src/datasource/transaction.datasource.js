@@ -181,3 +181,23 @@ export const deleteTransactionById = async (transactionId, userId) => {
   });
 };
 
+/**
+ * Update category snapshot for all transactions with deleted category
+ */
+export const updateCategorySnapshot = async (categoryId, snapshotName) => {
+  return await Transaction.updateMany(
+    { categoryId: categoryId },
+    { categorySnapshot: snapshotName }
+  );
+};
+
+/**
+ * Update account snapshot for all transactions with deleted account
+ */
+export const updateAccountSnapshot = async (accountId, snapshotName) => {
+  return await Transaction.updateMany(
+    { accountId: accountId },
+    { accountSnapshot: snapshotName }
+  );
+};
+

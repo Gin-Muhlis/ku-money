@@ -1,4 +1,5 @@
 import * as accountDatasource from '../../datasource/account.datasource.js';
+import * as transactionDatasource from '../../datasource/transaction.datasource.js';
 
 /**
  * Create new account
@@ -137,7 +138,8 @@ export const deleteAccount = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const account = await accountDatasource.deleteAccountById(
+    // Get account first to get the name
+    const account = await accountDatasource.findAccountByIdAndUserId(
       id,
       req.user.id
     );
@@ -148,6 +150,16 @@ export const deleteAccount = async (req, res) => {
         code: 'ACCOUNT_NOT_FOUND',
       });
     }
+
+    // Update all transactions that use this account with snapshot
+    const accountSnapshot = account.title;
+    const updateResult = await transactionDatasource.updateAccountSnapshot(
+      id,
+      accountSnapshot
+    );
+
+    // Delete account
+    await accountDatasource.deleteAccountById(id, req.user.id);
 
     res.status(200).json({
       message: 'Account deleted successfully',

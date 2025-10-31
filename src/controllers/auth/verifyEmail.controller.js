@@ -7,7 +7,6 @@ import * as userDatasource from '../../datasource/user.datasource.js';
  */
 export const verifyEmail = async (req, res) => {
   const { token } = req.body;
-
   try {
     const decoded = verifyToken(token, process.env.JWT_SECRET);
     const user = await userDatasource.findUserById(decoded.id);
@@ -17,7 +16,7 @@ export const verifyEmail = async (req, res) => {
     }
 
     if (user.verified) {
-      return res.status(400).json({ message: 'Email already verified' });
+      return res.status(200).json({ isVerified: true });
     }
 
     await userDatasource.verifyUser(user._id);

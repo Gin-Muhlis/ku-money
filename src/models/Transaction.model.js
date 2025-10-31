@@ -36,6 +36,16 @@ const transactionSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    categorySnapshot: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    accountSnapshot: {
+      type: String,
+      default: null,
+      trim: true,
+    },
   },
   { timestamps: true }
 );

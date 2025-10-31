@@ -1,4 +1,4 @@
-import Xendit from 'xendit-node';
+import { Xendit } from 'xendit-node';
 import dotenv from 'dotenv';
 
 dotenv.config();

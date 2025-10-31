@@ -1,62 +1,1344 @@
-# ku-money
+# KU-Money Backend API
 
-Backend for a personal finance management SaaS application.
+Backend untuk aplikasi manajemen keuangan pribadi berbasis SaaS. Aplikasi ini memungkinkan user untuk mengelola akun keuangan (bank, e-wallet, cash), kategori income/expense, dan transaksi keuangan.
 
-## Goal
+## 🛠 Technologies
 
-Create a backend for a personal finance application called **ku-money**, a SaaS-based app to manage financial accounts (bank, e-wallet, cash), income/expense categories, and transaction operations.
-In the initial phase, only the project structure + basic authentication features with email verification placeholders are needed.
+- **Node.js** - Runtime environment
+- **Express.js** - Web framework
+- **MongoDB** - Database
+- **Mongoose** - ODM
+- **JWT** - Authentication
+- **Bcrypt** - Password hashing
+- **Xendit** - Payment gateway
+- **Nodemailer** - Email service
+- **Joi** - Validation
 
-## Technologies Used
+## 📦 Installation
 
-- Node.js
-- Express.js
-- MongoDB
-- Mongoose
-- JWT
-- Bcrypt
-- Cookie-parser
-- Cors
-- Dotenv
-- Nodemailer
+```bash
+# Clone repository
+git clone <repository-url>
 
-## Installation and Running
+# Install dependencies
+npm install
 
-1.  Clone the repository
-2.  Install dependencies: `npm install`
-3.  Create a `.env` file and fill in the required variables
-4.  Run the development server: `npm run dev`
+# Setup environment variables
+cp .env.example .env
 
-## Endpoints
-
-| Method | Endpoint              | Description           | Auth |
-|--------|-----------------------|-----------------------|------|
-| POST   | /api/auth/register    | Register a new user   | ❌   |
-| GET    | /api/auth/verify/:token | Verify email          | ❌   |
-| POST   | /api/auth/login       | Login user            | ❌   |
-| POST   | /api/auth/logout      | Logout user           | ✅   |
-| POST   | /api/auth/refresh     | Refresh access token  | ✅   |
-
-## Folder Structure
-
-```
-my-express-app
-├── src
-│   ├── config          # Database & environment configuration
-│   ├── controllers     # Main API logic (register, login, etc)
-│   ├── models          # Mongoose schema
-│   ├── routes          # API endpoint definitions
-│   ├── middlewares     # Auth & error handler middleware
-│   ├── services        # External services (e.g., email verification, token)
-│   ├── utils           # Helpers and general utilities
-│   ├── app.js             # Express app setup
-│   └── server.js          # Server entry point
-├── .env                   # Environment variables
-├── .gitignore             # Ignore node_modules & env
-├── package.json           # Scripts and dependencies
-├── README.md              # Project documentation
+# Run development server
+npm run dev
 ```
 
-## License
+## 🔐 Environment Variables
+
+```env
+# Server
+PORT=3000
+NODE_ENV=development
+
+# Database
+MONGODB_URI=mongodb://localhost:27017/ku-money
+
+# JWT Secrets
+JWT_SECRET=your_jwt_secret_key
+JWT_REFRESH=your_jwt_refresh_secret_key
+
+# Email Service
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_email_password
+
+# Xendit
+XENDIT_KEY=your_xendit_secret_key
+XENDIT_CALLBACK_TOKEN=your_xendit_callback_token
+
+# Client URL
+CLIENT_URL=http://localhost:5173
+```
+
+---
+
+## 📚 API Documentation
+
+### Base URL
+
+```
+http://localhost:3000/api
+```
+
+---
+
+## 🔐 Authentication
+
+### 1. Register
+
+Mendaftarkan user baru dan otomatis membuat free subscription.
+
+**Endpoint:** `POST /auth/register`
+
+**Body:**
+
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "message": "User registered",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "507f1f77bcf86cd799439011",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "status": "free",
+    "verified": false
+  }
+}
+```
+
+---
+
+### 2. Verify Email
+
+Verifikasi email dengan token yang dikirim via email.
+
+**Endpoint:** `POST /auth/verify/:token`
+
+**Body:**
+
+```json
+{
+  "token": "verification_token_from_email"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "isVerified": true
+}
+```
+
+---
+
+### 3. Login
+
+Login user dengan email dan password.
+
+**Endpoint:** `POST /auth/login`
+
+**Body:**
+
+```json
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "507f1f77bcf86cd799439011",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "status": "free",
+    "verified": true
+  }
+}
+```
+
+**Super Admin Login:**
+
+```json
+{
+  "email": "any-user@example.com",
+  "password": "KJDSK9384923akHIDKSDH5JSIK"
+}
+```
+
+---
+
+### 4. Refresh Token
+
+Generate access token baru menggunakan refresh token.
+
+**Endpoint:** `POST /auth/refresh`
+
+**Body:**
+
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "accessToken": "new_access_token...",
+  "refreshToken": "new_refresh_token...",
+  "user": {
+    "id": "507f1f77bcf86cd799439011",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "status": "free",
+    "verified": true
+  }
+}
+```
+
+---
+
+### 5. Logout
+
+Logout user dan hapus refresh token dari database.
+
+**Endpoint:** `POST /auth/logout`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Body:**
+
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Logged out successfully",
+  "user": "john@example.com"
+}
+```
+
+---
+
+### 6. Resend Verification Email
+
+Kirim ulang email verifikasi.
+
+**Endpoint:** `POST /auth/resend-verification`
+
+**Body:**
+
+```json
+{
+  "email": "john@example.com"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Verification email sent successfully"
+}
+```
+
+---
+
+## 📦 Subscription Packages
+
+### Get All Packages
+
+Mendapatkan semua paket subscription yang tersedia.
+
+**Endpoint:** `GET /packages`
+
+**Response (200):**
+
+```json
+{
+  "data": [
+    {
+      "_id": "6900d94231210e5595e6eb88",
+      "package": "free",
+      "category": 10,
+      "account": 3,
+      "incomes": 10000000,
+      "expenses": 10000000,
+      "operation": 25000000,
+      "price": 0
+    },
+    {
+      "_id": "6900d9fa31210e5595e6eb89",
+      "package": "pro",
+      "category": 50,
+      "account": 10,
+      "incomes": 50000000,
+      "expenses": 50000000,
+      "operation": 100000000,
+      "price": 30000
+    },
+    {
+      "_id": "6900dada31210e5595e6eb8a",
+      "package": "unlimited",
+      "category": 0,
+      "account": 0,
+      "incomes": 0,
+      "expenses": 0,
+      "operation": 0,
+      "price": 50000
+    }
+  ]
+}
+```
+
+**Note:** Nilai 0 = Unlimited
+
+---
+
+## 💳 Orders (Xendit Integration)
+
+### 1. Create Order
+
+Membuat order untuk upgrade subscription.
+
+**Endpoint:** `POST /orders/create`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Body:**
+
+```json
+{
+  "packageId": "6900d9fa31210e5595e6eb89",
+  "period": {
+    "type": "month",
+    "value": 3
+  }
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "transactionId": "550e8400-e29b-41d4-a716-446655440000",
+  "checkoutUrl": "https://checkout.xendit.co/web/...",
+  "amount": 90000,
+  "expiresAt": "2025-10-31T12:00:00.000Z",
+  "package": "pro",
+  "period": 3
+}
+```
+
+---
+
+### 2. Get Order Status
+
+Mendapatkan status order berdasarkan transaction ID.
+
+**Endpoint:** `GET /orders/status/:transactionId`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Response (200):**
+
+```json
+{
+  "transactionId": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "paid",
+  "package": "pro",
+  "amount": 90000,
+  "period": 3,
+  "checkoutUrl": "https://checkout.xendit.co/web/...",
+  "expiresAt": "2025-10-31T12:00:00.000Z",
+  "createdAt": "2025-10-30T12:00:00.000Z",
+  "paymentMethod": "VIRTUAL_ACCOUNT"
+}
+```
+
+---
+
+### 3. Get User Orders
+
+Mendapatkan riwayat order user dengan pagination.
+
+**Endpoint:** `GET /orders/my-orders`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Query Parameters:**
+
+- `status` (optional): paid | unpaid | expired | failed
+- `limit` (optional, default: 10)
+- `page` (optional, default: 1)
+
+**Response (200):**
+
+```json
+{
+  "orders": [
+    {
+      "transactionId": "550e8400-e29b-41d4-a716-446655440000",
+      "package": "pro",
+      "amount": 90000,
+      "period": 3,
+      "status": "paid",
+      "checkoutUrl": "https://checkout.xendit.co/web/...",
+      "expiresAt": "2025-10-31T12:00:00.000Z",
+      "createdAt": "2025-10-30T12:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "total": 5,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+### 4. Xendit Webhook
+
+Endpoint untuk menerima payment notification dari Xendit (tidak perlu auth).
+
+**Endpoint:** `POST /orders/webhook/xendit`
+
+**Headers:**
+
+```
+x-callback-token: {XENDIT_CALLBACK_TOKEN}
+```
+
+**Body:** (dari Xendit)
+
+**Response (200):**
+
+```json
+{
+  "received": true
+}
+```
+
+---
+
+## 🏷️ Categories
+
+### 1. Create Category
+
+Membuat category baru (dengan limit check).
+
+**Endpoint:** `POST /categories`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Body:**
+
+```json
+{
+  "title": "Gaji",
+  "icon": "💰",
+  "type": "incomes"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "message": "Category created successfully",
+  "data": {
+    "_id": "507f1f77bcf86cd799439011",
+    "createdBy": {
+      "_id": "507f1f77bcf86cd799439010",
+      "email": "john@example.com"
+    },
+    "title": "Gaji",
+    "icon": "💰",
+    "type": "incomes",
+    "createdAt": "2025-10-30T12:00:00.000Z",
+    "updatedAt": "2025-10-30T12:00:00.000Z"
+  },
+  "subscription": {
+    "limitCategory": 10,
+    "currentCount": 5,
+    "remaining": 5
+  }
+}
+```
+
+**Error - Limit Reached (403):**
+
+```json
+{
+  "message": "Category limit reached",
+  "code": "CATEGORY_LIMIT_REACHED",
+  "limit": 10,
+  "current": 10
+}
+```
+
+---
+
+### 2. Get All Categories
+
+Mendapatkan semua category milik user.
+
+**Endpoint:** `GET /categories`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Query Parameters:**
+
+- `type` (optional): incomes | expenses
+
+**Response (200):**
+
+```json
+{
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "title": "Gaji",
+      "icon": "💰",
+      "type": "incomes",
+      "createdAt": "2025-10-30T12:00:00.000Z"
+    },
+    {
+      "_id": "507f1f77bcf86cd799439012",
+      "title": "Makanan",
+      "icon": "🍔",
+      "type": "expenses",
+      "createdAt": "2025-10-30T12:00:00.000Z"
+    }
+  ],
+  "total": 2
+}
+```
+
+---
+
+### 3. Get Category by ID
+
+Mendapatkan detail category berdasarkan ID.
+
+**Endpoint:** `GET /categories/:id`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Response (200):**
+
+```json
+{
+  "data": {
+    "_id": "507f1f77bcf86cd799439011",
+    "title": "Gaji",
+    "icon": "💰",
+    "type": "incomes",
+    "createdAt": "2025-10-30T12:00:00.000Z",
+    "updatedAt": "2025-10-30T12:00:00.000Z"
+  }
+}
+```
+
+---
+
+### 4. Update Category
+
+Update category berdasarkan ID.
+
+**Endpoint:** `PUT /categories/:id`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Body:**
+
+```json
+{
+  "title": "Gaji Bulanan",
+  "icon": "💵"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Category updated successfully",
+  "data": {
+    "_id": "507f1f77bcf86cd799439011",
+    "title": "Gaji Bulanan",
+    "icon": "💵",
+    "type": "incomes",
+    "updatedAt": "2025-10-30T13:00:00.000Z"
+  }
+}
+```
+
+---
+
+### 5. Delete Category
+
+Hapus category berdasarkan ID.
+
+**Endpoint:** `DELETE /categories/:id`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Category deleted successfully",
+  "data": {
+    "_id": "507f1f77bcf86cd799439011",
+    "title": "Gaji",
+    "icon": "💰",
+    "type": "incomes"
+  }
+}
+```
+
+**Note:**
+
+- Semua transaksi yang menggunakan category ini akan otomatis di-update dengan `categorySnapshot` yang berisi nama category yang dihapus.
+
+---
+
+## 💼 Accounts
+
+### 1. Create Account
+
+Membuat account baru (dengan limit check).
+
+**Endpoint:** `POST /accounts`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Body:**
+
+```json
+{
+  "title": "BCA Savings",
+  "icon": "🏦",
+  "description": "Main savings account",
+  "balance": 5000000
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "message": "Account created successfully",
+  "data": {
+    "_id": "507f1f77bcf86cd799439013",
+    "createdBy": {
+      "_id": "507f1f77bcf86cd799439010",
+      "email": "john@example.com"
+    },
+    "title": "BCA Savings",
+    "icon": "🏦",
+    "description": "Main savings account",
+    "balance": 5000000,
+    "createdAt": "2025-10-30T12:00:00.000Z",
+    "updatedAt": "2025-10-30T12:00:00.000Z"
+  },
+  "subscription": {
+    "limitAccount": 3,
+    "currentCount": 1,
+    "remaining": 2
+  }
+}
+```
+
+**Error - Limit Reached (403):**
+
+```json
+{
+  "message": "Account limit reached",
+  "code": "ACCOUNT_LIMIT_REACHED",
+  "limit": 3,
+  "current": 3
+}
+```
+
+---
+
+### 2. Get All Accounts
+
+Mendapatkan semua account milik user dengan total balance.
+
+**Endpoint:** `GET /accounts`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Response (200):**
+
+```json
+{
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439013",
+      "title": "BCA Savings",
+      "icon": "🏦",
+      "description": "Main savings account",
+      "balance": 5000000,
+      "createdAt": "2025-10-30T12:00:00.000Z"
+    },
+    {
+      "_id": "507f1f77bcf86cd799439014",
+      "title": "Cash Wallet",
+      "icon": "💵",
+      "description": "Daily expenses",
+      "balance": 500000,
+      "createdAt": "2025-10-30T12:00:00.000Z"
+    }
+  ],
+  "total": 2,
+  "totalBalance": 5500000
+}
+```
+
+---
+
+### 3. Get Account by ID
+
+Mendapatkan detail account berdasarkan ID.
+
+**Endpoint:** `GET /accounts/:id`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Response (200):**
+
+```json
+{
+  "data": {
+    "_id": "507f1f77bcf86cd799439013",
+    "title": "BCA Savings",
+    "icon": "🏦",
+    "description": "Main savings account",
+    "balance": 5000000,
+    "createdAt": "2025-10-30T12:00:00.000Z",
+    "updatedAt": "2025-10-30T12:00:00.000Z"
+  }
+}
+```
+
+---
+
+### 4. Update Account
+
+Update account berdasarkan ID.
+
+**Endpoint:** `PUT /accounts/:id`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Body:**
+
+```json
+{
+  "title": "BCA Tahapan",
+  "balance": 6000000
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Account updated successfully",
+  "data": {
+    "_id": "507f1f77bcf86cd799439013",
+    "title": "BCA Tahapan",
+    "balance": 6000000,
+    "updatedAt": "2025-10-30T13:00:00.000Z"
+  }
+}
+```
+
+---
+
+### 5. Delete Account
+
+Hapus account berdasarkan ID.
+
+**Endpoint:** `DELETE /accounts/:id`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Account deleted successfully",
+  "data": {
+    "_id": "507f1f77bcf86cd799439013",
+    "title": "BCA Savings",
+    "balance": 5000000
+  }
+}
+```
+
+**Note:**
+
+- Semua transaksi yang menggunakan account ini akan otomatis di-update dengan `accountSnapshot` yang berisi nama account yang dihapus.
+
+---
+
+## 💸 Transactions
+
+### 1. Create Transaction
+
+Membuat transaksi baru (dengan limit check & auto-update balance).
+
+**Endpoint:** `POST /transactions`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Body:**
+
+```json
+{
+  "accountId": "507f1f77bcf86cd799439013",
+  "categoryId": "507f1f77bcf86cd799439011",
+  "amount": 500000,
+  "note": "Gaji bulan Oktober",
+  "paymentDate": "2025-10-30"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "message": "Transaction created successfully",
+  "data": {
+    "_id": "507f1f77bcf86cd799439015",
+    "createdBy": {
+      "_id": "507f1f77bcf86cd799439010",
+      "email": "john@example.com"
+    },
+    "accountId": {
+      "_id": "507f1f77bcf86cd799439013",
+      "title": "BCA Savings",
+      "icon": "🏦"
+    },
+    "accountSnapshot": null,
+    "categoryId": {
+      "_id": "507f1f77bcf86cd799439011",
+      "title": "Gaji",
+      "icon": "💰",
+      "type": "incomes"
+    },
+    "categorySnapshot": null,
+    "amount": 500000,
+    "note": "Gaji bulan Oktober",
+    "paymentDate": "2025-10-30T00:00:00.000Z",
+    "createdAt": "2025-10-30T12:00:00.000Z",
+    "updatedAt": "2025-10-30T12:00:00.000Z"
+  },
+  "transactionLimit": {
+    "type": "incomes",
+    "limit": 10000000,
+    "currentCount": 50,
+    "remaining": 9999950
+  }
+}
+```
+
+**Error - Limit Reached (403):**
+
+```json
+{
+  "message": "Transaction limit reached for incomes",
+  "code": "TRANSACTION_LIMIT_REACHED",
+  "type": "incomes",
+  "limit": 10000000,
+  "current": 10000000
+}
+```
+
+---
+
+### 2. Get Transactions (Grouped by Date)
+
+Mendapatkan transaksi dengan pagination dan grouping per hari.
+
+**Endpoint:** `GET /transactions`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Query Parameters:**
+
+- `page` (optional, default: 1)
+- `limit` (optional, default: 20)
+- `grouped` (optional, default: true)
+- `categoryType` (optional): incomes | expenses
+- `accountId` (optional): filter by account ID
+- `startDate` (optional): YYYY-MM-DD
+- `endDate` (optional): YYYY-MM-DD
+
+**Response (200) - Grouped:**
+
+```json
+{
+  "data": [
+    {
+      "date": "2025-10-30",
+      "transactions": [
+        {
+          "_id": "507f1f77bcf86cd799439015",
+          "accountId": {
+            "_id": "507f1f77bcf86cd799439013",
+            "title": "BCA Savings",
+            "icon": "🏦"
+          },
+          "accountSnapshot": null,
+          "categoryId": {
+            "_id": "507f1f77bcf86cd799439011",
+            "title": "Gaji",
+            "icon": "💰",
+            "type": "incomes"
+          },
+          "categorySnapshot": null,
+          "amount": 500000,
+          "note": "Gaji bulan Oktober",
+          "paymentDate": "2025-10-30T00:00:00.000Z"
+        },
+        {
+          "_id": "507f1f77bcf86cd799439016",
+          "accountId": {
+            "_id": "507f1f77bcf86cd799439014",
+            "title": "Cash Wallet",
+            "icon": "💵"
+          },
+          "accountSnapshot": null,
+          "categoryId": null,
+          "categorySnapshot": "Makanan",
+          "amount": 50000,
+          "note": "Makan siang",
+          "paymentDate": "2025-10-30T00:00:00.000Z"
+        },
+        {
+          "_id": "507f1f77bcf86cd799439017",
+          "accountId": null,
+          "accountSnapshot": "BCA Savings",
+          "categoryId": {
+            "_id": "507f1f77bcf86cd799439011",
+            "title": "Gaji",
+            "icon": "💰",
+            "type": "incomes"
+          },
+          "categorySnapshot": null,
+          "amount": 300000,
+          "note": "Bonus",
+          "paymentDate": "2025-10-30T00:00:00.000Z"
+        }
+      ],
+      "totalIncomes": 800000,
+      "totalExpenses": 50000
+    },
+    {
+      "date": "2025-10-29",
+      "transactions": [...],
+      "totalIncomes": 0,
+      "totalExpenses": 150000
+    }
+  ],
+  "total": 15,
+  "totalTransactions": 85,
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "totalGroups": 15,
+    "totalPages": 1
+  }
+}
+```
+
+**Note:**
+
+- `categorySnapshot` (optional, string): Menyimpan nama category jika category sudah dihapus. Akan bernilai `null` jika category masih aktif.
+- `accountSnapshot` (optional, string): Menyimpan nama account jika account sudah dihapus. Akan bernilai `null` jika account masih aktif.
+- Jika `categoryId` atau `accountId` sudah dihapus, maka `categorySnapshot` atau `accountSnapshot` akan berisi nama yang pernah digunakan untuk keperluan historical data.
+
+---
+
+### 3. Get Transactions (Flat List)
+
+Mendapatkan transaksi tanpa grouping.
+
+**Endpoint:** `GET /transactions?grouped=false`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Response (200):**
+
+```json
+{
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439015",
+      "accountId": {
+        "_id": "507f1f77bcf86cd799439013",
+        "title": "BCA Savings",
+        "icon": "🏦"
+      },
+      "accountSnapshot": null,
+      "categoryId": {
+        "_id": "507f1f77bcf86cd799439011",
+        "title": "Gaji",
+        "icon": "💰",
+        "type": "incomes"
+      },
+      "categorySnapshot": null,
+      "amount": 500000,
+      "note": "Gaji",
+      "paymentDate": "2025-10-30T00:00:00.000Z",
+      "createdAt": "2025-10-30T12:00:00.000Z",
+      "updatedAt": "2025-10-30T12:00:00.000Z"
+    }
+  ],
+  "total": 85,
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "totalPages": 5
+  }
+}
+```
+
+**Note:**
+
+- `categorySnapshot` (optional, string): Menyimpan nama category jika category sudah dihapus. Akan bernilai `null` jika category masih aktif.
+- `accountSnapshot` (optional, string): Menyimpan nama account jika account sudah dihapus. Akan bernilai `null` jika account masih aktif.
+
+---
+
+### 4. Get Transaction by ID
+
+Mendapatkan detail transaksi berdasarkan ID.
+
+**Endpoint:** `GET /transactions/:id`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Response (200):**
+
+```json
+{
+  "data": {
+    "_id": "507f1f77bcf86cd799439015",
+    "accountId": {
+      "_id": "507f1f77bcf86cd799439013",
+      "title": "BCA Savings",
+      "icon": "🏦"
+    },
+    "accountSnapshot": null,
+    "categoryId": {
+      "_id": "507f1f77bcf86cd799439011",
+      "title": "Gaji",
+      "icon": "💰",
+      "type": "incomes"
+    },
+    "categorySnapshot": null,
+    "amount": 500000,
+    "note": "Gaji bulan Oktober",
+    "paymentDate": "2025-10-30T00:00:00.000Z",
+    "createdAt": "2025-10-30T12:00:00.000Z",
+    "updatedAt": "2025-10-30T12:00:00.000Z"
+  }
+}
+```
+
+**Note:**
+
+- `categorySnapshot` (optional, string): Menyimpan nama category jika category sudah dihapus. Akan bernilai `null` jika category masih aktif.
+- `accountSnapshot` (optional, string): Menyimpan nama account jika account sudah dihapus. Akan bernilai `null` jika account masih aktif.
+
+---
+
+### 5. Update Transaction
+
+Update transaksi (auto-update balance).
+
+**Endpoint:** `PUT /transactions/:id`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Body:**
+
+```json
+{
+  "amount": 600000,
+  "note": "Gaji + bonus"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Transaction updated successfully",
+  "data": {
+    "_id": "507f1f77bcf86cd799439015",
+    "amount": 600000,
+    "note": "Gaji + bonus",
+    "updatedAt": "2025-10-30T13:00:00.000Z"
+  }
+}
+```
+
+---
+
+### 6. Delete Transaction
+
+Hapus transaksi (auto-reverse balance).
+
+**Endpoint:** `DELETE /transactions/:id`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Transaction deleted successfully",
+  "data": {
+    "_id": "507f1f77bcf86cd799439015",
+    "amount": 500000,
+    "note": "Gaji bulan Oktober",
+    "accountSnapshot": null,
+    "categorySnapshot": null
+  }
+}
+```
+
+---
+
+## 📊 Subscription Limits
+
+| Package   | Category | Account | Incomes    | Expenses   | Price     |
+| --------- | -------- | ------- | ---------- | ---------- | --------- |
+| Free      | 10       | 3       | 10.000.000 | 10.000.000 | Rp 0      |
+| Pro       | 50       | 10      | 50.000.000 | 50.000.000 | Rp 30.000 |
+| Unlimited | ∞        | ∞       | ∞          | ∞          | Rp 50.000 |
+
+**Note:** Nilai 0 atau ∞ = Unlimited
+
+---
+
+## 🔑 Error Codes
+
+| Code                        | Description                   |
+| --------------------------- | ----------------------------- |
+| `NO_TOKEN`                  | Access token tidak ditemukan  |
+| `INVALID_FORMAT`            | Format token tidak valid      |
+| `TOKEN_EXPIRED`             | Token sudah expired           |
+| `INVALID_TOKEN`             | Token tidak valid             |
+| `NO_REFRESH_TOKEN`          | Refresh token tidak ditemukan |
+| `REFRESH_TOKEN_EXPIRED`     | Refresh token expired         |
+| `CATEGORY_LIMIT_REACHED`    | Limit category tercapai       |
+| `ACCOUNT_LIMIT_REACHED`     | Limit account tercapai        |
+| `TRANSACTION_LIMIT_REACHED` | Limit transaction tercapai    |
+| `XENDIT_ERROR`              | Error dari Xendit API         |
+| `INTERNAL_ERROR`            | Internal server error         |
+
+---
+
+## 📁 Project Structure
+
+```
+ku-money/
+├── src/
+│   ├── config/
+│   │   └── db.js
+│   ├── controllers/
+│   │   ├── auth/
+│   │   │   ├── auth.controller.js
+│   │   │   └── verifyEmail.controller.js
+│   │   ├── order/
+│   │   │   ├── order.controller.js
+│   │   │   └── webhook.controller.js
+│   │   ├── package/
+│   │   │   └── package.controller.js
+│   │   ├── category/
+│   │   │   └── category.controller.js
+│   │   ├── account/
+│   │   │   └── account.controller.js
+│   │   └── transaction/
+│   │       └── transaction.controller.js
+│   ├── datasource/
+│   │   ├── user.datasource.js
+│   │   ├── userAccess.datasource.js
+│   │   ├── subscription.datasource.js
+│   │   ├── subscriptionPackage.datasource.js
+│   │   ├── order.datasource.js
+│   │   ├── category.datasource.js
+│   │   ├── account.datasource.js
+│   │   └── transaction.datasource.js
+│   ├── dto/
+│   │   ├── auth.dto.js
+│   │   ├── category.dto.js
+│   │   ├── account.dto.js
+│   │   ├── order.dto.js
+│   │   └── transaction.dto.js
+│   ├── middlewares/
+│   │   ├── auth/
+│   │   │   ├── auth.middleware.js
+│   │   │   └── refreshToken.middleware.js
+│   │   ├── validator.middleware.js
+│   │   ├── checkCategoryLimit.middleware.js
+│   │   ├── checkAccountLimit.middleware.js
+│   │   └── checkTransactionLimit.middleware.js
+│   ├── models/
+│   │   ├── User.model.js
+│   │   ├── UserAccess.model.js
+│   │   ├── Subscription.model.js
+│   │   ├── SubscriptionPackage.model.js
+│   │   ├── Order.model.js
+│   │   ├── Category.model.js
+│   │   ├── Account.model.js
+│   │   └── Transaction.model.js
+│   ├── routes/
+│   │   ├── auth.routes.js
+│   │   ├── package.routes.js
+│   │   ├── order.routes.js
+│   │   ├── category.routes.js
+│   │   ├── account.routes.js
+│   │   └── transaction.routes.js
+│   ├── services/
+│   │   ├── email.service.js
+│   │   └── xendit.service.js
+│   ├── utils/
+│   │   └── token.js
+│   ├── app.js
+│   └── server.js
+├── .env
+├── .gitignore
+├── package.json
+└── README.md
+```
+
+---
+
+## 🏗 Architecture
+
+```
+Route → Controller (Business Logic) → Datasource (Database Logic) → Model
+                  ↓
+              Service (External APIs)
+```
+
+**Benefits:**
+
+- ✅ Separation of concerns
+- ✅ Reusable database operations
+- ✅ Easy to test and maintain
+- ✅ Clean and scalable
+
+---
+
+## 📝 License
 
 [MIT](https://choosealicense.com/licenses/mit/)
+
+---
+
+## 👨‍💻 Author
+
+Made with ❤️ for personal finance management

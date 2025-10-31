@@ -29,7 +29,7 @@ const router = express.Router();
 // Public routes (no auth required)
 router.post('/register', validate(registerDto), register);
 router.post('/login', validate(loginDto), login);
-router.post('/verify/:token', validate(verifyEmailDto), verifyEmail);
+router.post('/verify', validate(verifyEmailDto), verifyEmail);
 router.post('/resend-verification', validate(resendVerificationDto), resendVerificationEmail);
 
 // Protected routes (auth required)

@@ -1,4 +1,5 @@
 import * as categoryDatasource from '../../datasource/category.datasource.js';
+import * as transactionDatasource from '../../datasource/transaction.datasource.js';
 
 /**
  * Create new category
@@ -136,7 +137,8 @@ export const deleteCategory = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const category = await categoryDatasource.deleteCategoryById(
+    // Get category first to get the name
+    const category = await categoryDatasource.findCategoryByIdAndUserId(
       id,
       req.user.id
     );
@@ -147,6 +149,16 @@ export const deleteCategory = async (req, res) => {
         code: 'CATEGORY_NOT_FOUND',
       });
     }
+
+    // Update all transactions that use this category with snapshot
+    const categorySnapshot = category.title;
+    const updateResult = await transactionDatasource.updateCategorySnapshot(
+      id,
+      categorySnapshot
+    );
+
+    // Delete category
+    await categoryDatasource.deleteCategoryById(id, req.user.id);
 
     res.status(200).json({
       message: 'Category deleted successfully',
