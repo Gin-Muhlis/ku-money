@@ -93,6 +93,7 @@ export const updateUserSubscription = async (order) => {
     const userId = order.createdBy._id;
     const packageName = order.subscriptionPackage;
     const periodValue = order.period.value;
+    const orderType = order.orderType;
 
     // Ambil data package untuk limit
     const packageData = await packageDatasource.findPackageByName(packageName);
@@ -104,55 +105,90 @@ export const updateUserSubscription = async (order) => {
 
     // Cari subscription aktif user
     const existingSubscription = await subscriptionDatasource.findActiveSubscriptionByUserId(userId);
-
-    // Hitung expired date baru (dari sekarang + period bulan)
+    // Ambil data user untuk cek status sebelumnya
+    const user = await userDatasource.findUserById(userId);
     const now = new Date();
-    const newExpiredAt = new Date(now);
-    newExpiredAt.setMonth(newExpiredAt.getMonth() + periodValue);
 
-    if (existingSubscription) {
-      // Jika sudah ada subscription yang belum expired, extend dari expired date yang ada
+    if (orderType === 'upgrade') {
+      // Upgrade: Update limit berdasarkan package + update expiredAt
       let updatedExpiredAt;
-      if (existingSubscription.expiredAt > now) {
+      
+      // Jika user sebelumnya free, expiredAt dihitung dari sekarang
+      // karena free package memiliki expiredAt 100 tahun ke depan
+      if (user && user.status === 'free') {
+        // Upgrade dari free: expiredAt mulai dari sekarang + period
+        updatedExpiredAt = new Date(now);
+        updatedExpiredAt.setMonth(updatedExpiredAt.getMonth() + periodValue);
+      } else if (existingSubscription && existingSubscription.expiredAt > now) {
+        // Jika masih ada subscription aktif (bukan free), extend dari expired date yang ada
         const extendFrom = new Date(existingSubscription.expiredAt);
         extendFrom.setMonth(extendFrom.getMonth() + periodValue);
         updatedExpiredAt = extendFrom;
       } else {
-        updatedExpiredAt = newExpiredAt;
+        // Jika tidak ada subscription aktif, mulai dari sekarang
+        updatedExpiredAt = new Date(now);
+        updatedExpiredAt.setMonth(updatedExpiredAt.getMonth() + periodValue);
       }
 
-      // Update subscription
+      if (existingSubscription) {
+        // Update subscription dengan limit baru + expiredAt baru
+        await subscriptionDatasource.updateSubscription(existingSubscription._id, {
+          expiredAt: updatedExpiredAt,
+          limitCategory: packageData.category,
+          limitIncomes: packageData.incomes,
+          limitExpenses: packageData.expenses,
+          limitAccount: packageData.account,
+          isActive: true,
+        });
+        console.log('Subscription upgraded for user:', userId);
+      } else {
+        // Buat subscription baru
+        await subscriptionDatasource.createSubscription({
+          expiredAt: updatedExpiredAt,
+          createdBy: {
+            _id: order.createdBy._id,
+            name: order.createdBy.name,
+            email: order.createdBy.email,
+          },
+          isActive: true,
+          limitCategory: packageData.category,
+          limitIncomes: packageData.incomes,
+          limitExpenses: packageData.expenses,
+          limitAccount: packageData.account,
+        });
+        console.log('Subscription created for user:', userId);
+      }
+
+      // Update user status
+      await userDatasource.updateUserStatus(userId, packageName);
+      console.log('User status updated to:', packageName);
+    } else if (orderType === 'extends') {
+      // Extends: Hanya update expiredAt, tidak ubah limit
+      if (!existingSubscription) {
+        console.error('No active subscription found for extends order');
+        return;
+      }
+
+      // Hitung expired date baru dari expired date yang ada
+      let updatedExpiredAt;
+      if (existingSubscription.expiredAt > now) {
+        // Jika masih aktif, extend dari expired date yang ada
+        updatedExpiredAt = new Date(existingSubscription.expiredAt);
+        updatedExpiredAt.setMonth(updatedExpiredAt.getMonth() + periodValue);
+      } else {
+        // Jika sudah expired, mulai dari sekarang
+        updatedExpiredAt = new Date(now);
+        updatedExpiredAt.setMonth(updatedExpiredAt.getMonth() + periodValue);
+      }
+
+      // Update hanya expiredAt, limit tetap sama
       await subscriptionDatasource.updateSubscription(existingSubscription._id, {
         expiredAt: updatedExpiredAt,
-        limitCategory: packageData.category,
-        limitIncomes: packageData.incomes,
-        limitExpenses: packageData.expenses,
-        limitAccount: packageData.account,
         isActive: true,
       });
 
-      console.log('Subscription updated for user:', userId);
-    } else {
-      // Buat subscription baru
-      await subscriptionDatasource.createSubscription({
-        expiredAt: newExpiredAt,
-        createdBy: {
-          _id: order.createdBy._id,
-          name: order.createdBy.name,
-          email: order.createdBy.email,
-        },
-        isActive: true,
-        limitCategory: packageData.category,
-        limitIncomes: packageData.incomes,
-        limitExpenses: packageData.expenses,
-        limitAccount: packageData.account,
-      });
-      console.log('Subscription created for user:', userId);
+      console.log('Subscription extended for user:', userId);
     }
-
-    // Update user status
-    await userDatasource.updateUserStatus(userId, packageName);
-    console.log('User status updated to:', packageName);
   } catch (error) {
     console.error('Update Subscription Error:', error);
     throw error;

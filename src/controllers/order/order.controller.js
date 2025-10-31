@@ -7,7 +7,7 @@ import * as packageDatasource from '../../datasource/subscriptionPackage.datasou
  * Create new order
  */
 export const createOrder = async (req, res) => {
-  const { packageId, period } = req.body;
+  const { orderType, packageId, period } = req.body;
 
   try {
     // Ambil subscription package berdasarkan packageId
@@ -37,6 +37,7 @@ export const createOrder = async (req, res) => {
 
     // Mapping data order
     const orderData = {
+      orderType: orderType,
       subscriptionPackage: subscriptionPackage.package,
       amount: amount,
       packagePrice: packagePrice,
@@ -78,6 +79,7 @@ export const createOrder = async (req, res) => {
         successRedirectUrl: `${process.env.CLIENT_URL}/payment/success?transactionId=${transactionId}`,
         failureRedirectUrl: `${process.env.CLIENT_URL}/payment/failed?transactionId=${transactionId}`,
       });
+      console.log(invoiceResult);
 
       if (!invoiceResult.success) {
         // Hapus order jika gagal create invoice
@@ -98,6 +100,7 @@ export const createOrder = async (req, res) => {
         'paymentDetail.detailRequest.invoiceId': invoiceResult.data.invoiceId,
       });
     }
+    console.log(checkoutUrl);
 
     res.status(201).json({ 
       transactionId: transactionId,
@@ -106,6 +109,7 @@ export const createOrder = async (req, res) => {
       expiresAt: orderData.expiredPaymentAt,
       package: subscriptionPackage.package,
       period: period.value,
+      orderType: orderType,
     });
   } catch (error) {
     console.error('Create Order Error:', error);
@@ -141,6 +145,7 @@ export const getOrderStatus = async (req, res) => {
       package: order.subscriptionPackage,
       amount: order.amount,
       period: order.period.value,
+      orderType: order.orderType,
       checkoutUrl: order.paymentDetail.detailRequest?.checkoutUrl,
       expiresAt: order.expiredPaymentAt,
       createdAt: order.createdAt,
@@ -176,6 +181,7 @@ export const getUserOrders = async (req, res) => {
         package: order.subscriptionPackage,
         amount: order.amount,
         period: order.period.value,
+        orderType: order.orderType,
         status: order.paymentDetail.status,
         checkoutUrl: order.paymentDetail.detailRequest?.checkoutUrl,
         expiresAt: order.expiredPaymentAt,
@@ -190,6 +196,41 @@ export const getUserOrders = async (req, res) => {
     });
   } catch (error) {
     console.error('Get User Orders Error:', error);
+    res.status(500).json({ 
+      message: error.message,
+      code: 'INTERNAL_ERROR'
+    });
+  }
+};
+
+/**
+ * Get last order for current user
+ */
+export const getLastOrder = async (req, res) => {
+  try {
+    const lastOrder = await orderDatasource.findLastOrderByUserId(req.user.id);
+
+    if (!lastOrder) {
+      return res.status(404).json({ 
+        message: 'No order found',
+        code: 'ORDER_NOT_FOUND'
+      });
+    }
+
+    res.status(200).json({
+      transactionId: lastOrder.paymentDetail.transactionId,
+      status: lastOrder.paymentDetail.status,
+      package: lastOrder.subscriptionPackage,
+      amount: lastOrder.amount,
+      period: lastOrder.period.value,
+      orderType: lastOrder.orderType,
+      checkoutUrl: lastOrder.paymentDetail.detailRequest?.checkoutUrl,
+      expiresAt: lastOrder.expiredPaymentAt,
+      createdAt: lastOrder.createdAt,
+      paymentMethod: lastOrder.paymentDetail.paymentMethod,
+    });
+  } catch (error) {
+    console.error('Get Last Order Error:', error);
     res.status(500).json({ 
       message: error.message,
       code: 'INTERNAL_ERROR'

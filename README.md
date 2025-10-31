@@ -258,6 +258,69 @@ Kirim ulang email verifikasi.
 
 ---
 
+### 7. Update Password
+
+Update password user (memerlukan password lama untuk verifikasi).
+
+**Endpoint:** `PUT /auth/password`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Body:**
+
+```json
+{
+  "oldPassword": "password123",
+  "newPassword": "newPassword456"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "message": "Password updated successfully"
+}
+```
+
+**Error - Wrong Old Password (400):**
+
+```json
+{
+  "message": "Old password is incorrect",
+  "code": "INVALID_OLD_PASSWORD"
+}
+```
+
+**Error - Same Password (400):**
+
+```json
+{
+  "message": "New password must be different from old password",
+  "code": "SAME_PASSWORD"
+}
+```
+
+**Error - Validation (400):**
+
+```json
+{
+  "message": "Validation error",
+  "details": [
+    {
+      "field": "newPassword",
+      "message": "New password must be at least 6 characters"
+    }
+  ]
+}
+```
+
+---
+
 ## 📦 Subscription Packages
 
 ### Get All Packages
@@ -309,11 +372,60 @@ Mendapatkan semua paket subscription yang tersedia.
 
 ---
 
+## 📋 Subscriptions
+
+### Get User Subscription
+
+Mendapatkan subscription aktif milik user yang sedang login, termasuk expiredAt dan limit-limit yang berlaku.
+
+**Endpoint:** `GET /subscriptions`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Response (200):**
+
+```json
+{
+  "subscription": {
+    "id": "507f1f77bcf86cd799439011",
+    "expiredAt": "2025-12-31T23:59:59.000Z",
+    "isActive": true,
+    "limitCategory": 50,
+    "limitIncomes": 50000000,
+    "limitExpenses": 50000000,
+    "limitAccount": 10,
+    "createdAt": "2025-10-30T12:00:00.000Z",
+    "updatedAt": "2025-10-30T12:00:00.000Z"
+  }
+}
+```
+
+**Error - No Subscription (404):**
+
+```json
+{
+  "message": "No active subscription found",
+  "code": "NO_SUBSCRIPTION"
+}
+```
+
+**Note:**
+
+- Endpoint ini mengembalikan subscription aktif berdasarkan `userId` yang diambil dari access token.
+- Field `expiredAt` menunjukkan tanggal berakhirnya subscription.
+- Jika subscription sudah expired, masih akan ditampilkan selama `isActive` bernilai `true`.
+
+---
+
 ## 💳 Orders (Xendit Integration)
 
 ### 1. Create Order
 
-Membuat order untuk upgrade subscription.
+Membuat order untuk upgrade atau extend subscription.
 
 **Endpoint:** `POST /orders/create`
 
@@ -327,6 +439,7 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
+  "orderType": "upgrade",
   "packageId": "6900d9fa31210e5595e6eb89",
   "period": {
     "type": "month",
@@ -334,6 +447,16 @@ Authorization: Bearer {accessToken}
   }
 }
 ```
+
+**Body Parameters:**
+
+- `orderType` (required, string): Tipe order. Nilai yang diizinkan:
+  - `"upgrade"`: Upgrade subscription ke package baru (mengubah limit berdasarkan package + memperpanjang expiredAt)
+  - `"extends"`: Perpanjang subscription yang sudah ada (hanya memperpanjang expiredAt, limit tetap sama)
+- `packageId` (required, string): ID dari subscription package
+- `period` (required, object): Periode subscription
+  - `type` (optional, string): Tipe periode, default: `"month"`
+  - `value` (required, number): Nilai periode dalam bulan, harus salah satu dari: `1`, `3`, `6`, atau `12`
 
 **Response (201):**
 
@@ -344,9 +467,15 @@ Authorization: Bearer {accessToken}
   "amount": 90000,
   "expiresAt": "2025-10-31T12:00:00.000Z",
   "package": "pro",
-  "period": 3
+  "period": 3,
+  "orderType": "upgrade"
 }
 ```
+
+**Note:**
+
+- **Upgrade**: Ketika user melakukan upgrade (misalnya dari free ke pro atau unlimited), sistem akan mengupdate limit-limit subscription berdasarkan package yang dipilih dan memperpanjang `expiredAt` berdasarkan period yang diorder.
+- **Extends**: Ketika user melakukan extends/perpanjang, sistem hanya akan memperpanjang `expiredAt` berdasarkan period yang diorder. Limit-limit tetap sama seperti sebelumnya.
 
 ---
 
@@ -371,6 +500,7 @@ Authorization: Bearer {accessToken}
   "package": "pro",
   "amount": 90000,
   "period": 3,
+  "orderType": "upgrade",
   "checkoutUrl": "https://checkout.xendit.co/web/...",
   "expiresAt": "2025-10-31T12:00:00.000Z",
   "createdAt": "2025-10-30T12:00:00.000Z",
@@ -408,6 +538,7 @@ Authorization: Bearer {accessToken}
       "package": "pro",
       "amount": 90000,
       "period": 3,
+      "orderType": "upgrade",
       "status": "paid",
       "checkoutUrl": "https://checkout.xendit.co/web/...",
       "expiresAt": "2025-10-31T12:00:00.000Z",
@@ -425,7 +556,52 @@ Authorization: Bearer {accessToken}
 
 ---
 
-### 4. Xendit Webhook
+### 4. Get Last Order
+
+Mendapatkan order terakhir yang dibuat oleh user yang sedang login.
+
+**Endpoint:** `GET /orders/last`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Response (200):**
+
+```json
+{
+  "transactionId": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "paid",
+  "package": "pro",
+  "amount": 90000,
+  "period": 3,
+  "orderType": "upgrade",
+  "checkoutUrl": "https://checkout.xendit.co/web/...",
+  "expiresAt": "2025-10-31T12:00:00.000Z",
+  "createdAt": "2025-10-30T12:00:00.000Z",
+  "paymentMethod": "VIRTUAL_ACCOUNT"
+}
+```
+
+**Error - Order Not Found (404):**
+
+```json
+{
+  "message": "No order found",
+  "code": "ORDER_NOT_FOUND"
+}
+```
+
+**Note:**
+
+- Endpoint ini mengembalikan order terakhir berdasarkan `createdAt` (order terbaru).
+- Order diurutkan dari yang terbaru ke yang terlama.
+
+---
+
+### 5. Xendit Webhook
 
 Endpoint untuk menerima payment notification dari Xendit (tidak perlu auth).
 
@@ -537,6 +713,7 @@ Authorization: Bearer {accessToken}
       "title": "Gaji",
       "icon": "💰",
       "type": "incomes",
+      "amount": 5000000,
       "createdAt": "2025-10-30T12:00:00.000Z"
     },
     {
@@ -544,12 +721,17 @@ Authorization: Bearer {accessToken}
       "title": "Makanan",
       "icon": "🍔",
       "type": "expenses",
+      "amount": 500000,
       "createdAt": "2025-10-30T12:00:00.000Z"
     }
   ],
   "total": 2
 }
 ```
+
+**Note:**
+
+- `amount` (number): Total jumlah transaksi (pemasukan/pengeluaran) dari category tersebut. Akan bernilai `0` jika belum ada transaksi.
 
 ---
 
@@ -1224,19 +1406,29 @@ Authorization: Bearer {accessToken}
 
 ## 🔑 Error Codes
 
-| Code                        | Description                   |
-| --------------------------- | ----------------------------- |
-| `NO_TOKEN`                  | Access token tidak ditemukan  |
-| `INVALID_FORMAT`            | Format token tidak valid      |
-| `TOKEN_EXPIRED`             | Token sudah expired           |
-| `INVALID_TOKEN`             | Token tidak valid             |
-| `NO_REFRESH_TOKEN`          | Refresh token tidak ditemukan |
-| `REFRESH_TOKEN_EXPIRED`     | Refresh token expired         |
-| `CATEGORY_LIMIT_REACHED`    | Limit category tercapai       |
-| `ACCOUNT_LIMIT_REACHED`     | Limit account tercapai        |
-| `TRANSACTION_LIMIT_REACHED` | Limit transaction tercapai    |
-| `XENDIT_ERROR`              | Error dari Xendit API         |
-| `INTERNAL_ERROR`            | Internal server error         |
+| Code                            | Description                   |
+| ------------------------------- | ----------------------------- |
+| `NO_TOKEN`                      | Access token tidak ditemukan  |
+| `INVALID_FORMAT`                | Format token tidak valid      |
+| `TOKEN_EXPIRED`                 | Token sudah expired           |
+| `INVALID_TOKEN`                 | Token tidak valid             |
+| `NO_REFRESH_TOKEN`              | Refresh token tidak ditemukan |
+| `REFRESH_TOKEN_EXPIRED`         | Refresh token expired         |
+| `CATEGORY_LIMIT_REACHED`        | Limit category tercapai       |
+| `ACCOUNT_LIMIT_REACHED`         | Limit account tercapai        |
+| `ACCOUNT_BALANCE_LIMIT_REACHED` | Total balance limit tercapai  |
+| `TRANSACTION_LIMIT_REACHED`     | Limit transaction tercapai    |
+| `INVALID_OLD_PASSWORD`          | Old password salah            |
+| `SAME_PASSWORD`                 | New password sama dengan old  |
+| `USER_NOT_FOUND`                | User tidak ditemukan          |
+| `ACCOUNT_NOT_FOUND`             | Account tidak ditemukan       |
+| `CATEGORY_NOT_FOUND`            | Category tidak ditemukan      |
+| `TRANSACTION_NOT_FOUND`         | Transaction tidak ditemukan   |
+| `ORDER_NOT_FOUND`               | Order tidak ditemukan         |
+| `PACKAGE_NOT_FOUND`             | Package tidak ditemukan       |
+| `NO_SUBSCRIPTION`               | Tidak ada subscription aktif  |
+| `XENDIT_ERROR`                  | Error dari Xendit API         |
+| `INTERNAL_ERROR`                | Internal server error         |
 
 ---
 

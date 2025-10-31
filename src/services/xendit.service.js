@@ -21,6 +21,56 @@ const { Invoice } = xenditClient;
  * @param {string} data.failureRedirectUrl - URL untuk redirect saat payment failed
  * @returns {Promise<Object>} Invoice object dari Xendit
  */
+// export const createInvoice = async (data) => {
+
+//   try {
+//     const {
+//       transactionId,
+//       amount,
+//       email,
+//       description,
+//       successRedirectUrl,
+//       failureRedirectUrl,
+//     } = data;
+
+//     const invoiceData = {
+//       externalId: transactionId,
+//       amount: amount,
+//       payerEmail: email,
+//       description: description,
+//       invoiceDuration: 86400, // 24 jam dalam detik
+//       currency: 'IDR',
+//       reminderTime: 1, // Reminder 1 hari sebelum expired
+//       successRedirectUrl: successRedirectUrl,
+//       failureRedirectUrl: failureRedirectUrl,
+//     };
+
+//     const invoice = await Invoice.createInvoice({
+//       data: invoiceData,
+//     });
+
+//     return {
+//       success: true,
+//       data: {
+//         invoiceId: invoice.id,
+//         invoiceUrl: invoice.invoice_url,
+//         externalId: invoice.external_id,
+//         amount: invoice.amount,
+//         status: invoice.status,
+//         expiryDate: invoice.expiry_date,
+//       },
+//     };
+//   } catch (error) {
+//     console.error('Xendit Create Invoice Error:', error);
+//     return {
+//       success: false,
+//       error: {
+//         message: error.message || 'Failed to create invoice',
+//         code: error.error_code || 'XENDIT_ERROR',
+//       },
+//     };
+//   }
+// };
 export const createInvoice = async (data) => {
   try {
     const {
@@ -32,29 +82,29 @@ export const createInvoice = async (data) => {
       failureRedirectUrl,
     } = data;
 
-    const invoiceData = {
-      externalId: transactionId,
-      amount: amount,
-      payerEmail: email,
-      description: description,
-      invoiceDuration: 86400, // 24 jam dalam detik
-      currency: 'IDR',
-      reminderTime: 1, // Reminder 1 hari sebelum expired
-      successRedirectUrl: successRedirectUrl,
-      failureRedirectUrl: failureRedirectUrl,
-    };
-
-    const invoice = await Invoice.createInvoice(invoiceData);
-
+    const invoice = await Invoice.createInvoice({
+      data: {
+        externalId: transactionId,
+        amount,
+        payerEmail: email,
+        description,
+        invoiceDuration: 86400, // 24 jam
+        currency: 'IDR',
+        reminderTime: 1,
+        successRedirectUrl,
+        failureRedirectUrl,
+      },
+    });
+  console.log('invoice', invoice);    
     return {
       success: true,
       data: {
         invoiceId: invoice.id,
-        invoiceUrl: invoice.invoice_url,
-        externalId: invoice.external_id,
+        invoiceUrl: invoice.invoiceUrl,
+        externalId: invoice.externalId,
         amount: invoice.amount,
         status: invoice.status,
-        expiryDate: invoice.expiry_date,
+        expiryDate: invoice.expiryDate,
       },
     };
   } catch (error) {
@@ -68,6 +118,7 @@ export const createInvoice = async (data) => {
     };
   }
 };
+
 
 /**
  * Get Invoice detail dari Xendit

@@ -92,3 +92,23 @@ export const resendVerificationDto = Joi.object({
     }),
 });
 
+/**
+ * DTO for updating password
+ */
+export const updatePasswordDto = Joi.object({
+  oldPassword: Joi.string()
+    .required()
+    .messages({
+      'string.empty': 'Old password is required',
+      'any.required': 'Old password is required',
+    }),
+  newPassword: Joi.string()
+    .min(6)
+    .required()
+    .messages({
+      'string.empty': 'New password is required',
+      'string.min': 'New password must be at least 6 characters',
+      'any.required': 'New password is required',
+    }),
+});
+

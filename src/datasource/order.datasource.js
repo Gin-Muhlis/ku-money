@@ -70,3 +70,12 @@ export const addPaymentHistory = async (orderId, paymentHistoryData) => {
   );
 };
 
+/**
+ * Find last order by user ID
+ */
+export const findLastOrderByUserId = async (userId) => {
+  return await Order.findOne({ 'createdBy._id': userId })
+    .sort({ createdAt: -1 })
+    .limit(1);
+};
+

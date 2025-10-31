@@ -2,6 +2,11 @@ import mongoose from 'mongoose';
 
 const orderSchema = new mongoose.Schema(
   {
+    orderType: {
+      type: String,
+      required: true,
+      enum: ['extends', 'upgrade'],
+    },
     subscriptionPackage: {
       type: String,
       required: true,
@@ -57,8 +62,8 @@ const orderSchema = new mongoose.Schema(
       },
       status: {
         type: String,
-        enum: ['pending', 'paid', 'failed', 'expired', 'cancelled'],
-        default: 'pending',
+        enum: ['unpaid', 'paid', 'failed', 'expired', 'cancelled'],
+        default: 'unpaid',
       },
       transactionId: {
         type: String,

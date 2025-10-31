@@ -4,6 +4,14 @@ import Joi from 'joi';
  * DTO for creating order
  */
 export const createOrderDto = Joi.object({
+  orderType: Joi.string()
+    .valid('extends', 'upgrade')
+    .required()
+    .messages({
+      'string.base': 'Order type must be a string',
+      'any.only': 'Order type must be either "extends" or "upgrade"',
+      'any.required': 'Order type is required',
+    }),
   packageId: Joi.string()
     .required()
     .messages({

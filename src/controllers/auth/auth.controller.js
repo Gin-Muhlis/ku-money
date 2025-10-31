@@ -271,3 +271,60 @@ export const logout = async (req, res) => {
   }
 };
 
+/**
+ * Update user password
+ */
+export const updatePassword = async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  try {
+    // Get user from database
+    const user = await userDatasource.findUserById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+
+    // Verify old password
+    const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
+
+    if (!isOldPasswordValid) {
+      return res.status(400).json({
+        message: 'Old password is incorrect',
+        code: 'INVALID_OLD_PASSWORD',
+      });
+    }
+
+    // Check if new password is same as old password
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+
+    if (isSamePassword) {
+      return res.status(400).json({
+        message: 'New password must be different from old password',
+        code: 'SAME_PASSWORD',
+      });
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await userDatasource.updateUserById(req.user.id, {
+      password: hashedNewPassword,
+    });
+
+    res.status(200).json({
+      message: 'Password updated successfully',
+    });
+  } catch (error) {
+    console.error('Update Password Error:', error);
+    res.status(500).json({
+      message: error.message,
+      code: 'INTERNAL_ERROR',
+    });
+  }
+};
+

@@ -4,6 +4,7 @@ import {
   login,
   logout,
   refresh,
+  updatePassword,
 } from '../controllers/auth/auth.controller.js';
 import {
   verifyEmail,
@@ -21,7 +22,8 @@ import {
   loginDto, 
   refreshDto, 
   verifyEmailDto, 
-  resendVerificationDto 
+  resendVerificationDto,
+  updatePasswordDto
 } from '../dto/auth.dto.js';
 
 const router = express.Router();
@@ -34,6 +36,7 @@ router.post('/resend-verification', validate(resendVerificationDto), resendVerif
 
 // Protected routes (auth required)
 router.post('/logout', authMiddleware, logout);
+router.put('/password', authMiddleware, validate(updatePasswordDto), updatePassword);
 
 // Refresh token route (uses refresh token middleware)
 router.post('/refresh', validate(refreshDto), refreshTokenMiddleware, refresh);

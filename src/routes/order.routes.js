@@ -2,7 +2,8 @@ import express from 'express';
 import { 
   createOrder, 
   getOrderStatus, 
-  getUserOrders 
+  getUserOrders,
+  getLastOrder
 } from '../controllers/order/order.controller.js';
 import { xenditWebhook } from '../controllers/order/webhook.controller.js';
 
@@ -22,6 +23,7 @@ router.post('/webhook/xendit', xenditWebhook);
 router.post('/create', authMiddleware, validate(createOrderDto), createOrder);
 router.get('/status/:transactionId', authMiddleware, getOrderStatus);
 router.get('/my-orders', authMiddleware, getUserOrders);
+router.get('/last', authMiddleware, getLastOrder);
 
 export default router;
 
