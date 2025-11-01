@@ -8,7 +8,6 @@ import dashboardRoutes from './routes/dashboard.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import accountRoutes from './routes/account.routes.js';
 import transactionRoutes from './routes/transaction.routes.js';
-import { generalRateLimiter } from './middlewares/rateLimit.middleware.js';
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -22,9 +21,6 @@ const corsOptions = {
 
 app.use(cors());
 app.use(express.json());
-
-// Apply general rate limiting to all API routes
-app.use('/api', generalRateLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/packages', packageRoutes);
