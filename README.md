@@ -421,6 +421,55 @@ Authorization: Bearer {accessToken}
 
 ---
 
+### Get User Expired Status
+
+Mendapatkan status expired subscription user yang sedang login, termasuk apakah sudah expired dan sisa hari.
+
+**Endpoint:** `GET /subscriptions/expired`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Response (200):**
+
+```json
+{
+  "expiredAt": "2025-12-31T23:59:59.000Z",
+  "isExpired": false,
+  "remainingDays": 45
+}
+```
+
+**Jika sudah expired:**
+
+```json
+{
+  "expiredAt": "2024-10-30T23:59:59.000Z",
+  "isExpired": true,
+  "remainingDays": 0
+}
+```
+
+**Error - No Subscription (404):**
+
+```json
+{
+  "message": "No active subscription found",
+  "code": "NO_SUBSCRIPTION"
+}
+```
+
+**Note:**
+
+- `isExpired` bernilai `true` jika `expiredAt` sudah lebih kecil dari hari ini.
+- `remainingDays` menunjukkan sisa hari sebelum subscription berakhir (0 jika sudah expired).
+- Endpoint ini berguna untuk menampilkan reminder expired di frontend.
+
+---
+
 ## 💳 Orders (Xendit Integration)
 
 ### 1. Create Order
@@ -622,6 +671,208 @@ x-callback-token: {XENDIT_CALLBACK_TOKEN}
   "received": true
 }
 ```
+
+---
+
+## 📊 Dashboard
+
+### 1. Get Dashboard Summary
+
+Mendapatkan ringkasan data keuangan untuk dashboard: total saldo, pemasukan, pengeluaran, dan total transaksi.
+
+**Endpoint:** `GET /dashboard/summary`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Query Parameters:**
+
+- `fromDate` (optional, string): YYYY-MM-DD
+- `toDate` (optional, string): YYYY-MM-DD
+- `accountId` (optional, string): Filter by account ID
+
+**Response (200):**
+
+```json
+{
+  "totalBalance": 5500000,
+  "totalIncome": 5000000,
+  "totalExpenses": 500000,
+  "totalTransactions": 25
+}
+```
+
+**Note:**
+
+- `totalBalance` adalah saldo total dari semua account. Jika `accountId` diberikan, hanya saldo dari account tersebut.
+- `totalIncome` adalah total pemasukan dalam periode yang dipilih (jika `fromDate`/`toDate` diberikan).
+- `totalExpenses` adalah total pengeluaran dalam periode yang dipilih.
+- `totalTransactions` adalah jumlah transaksi dalam periode yang dipilih.
+
+---
+
+### 2. Get Expenses by Category
+
+Mendapatkan data pengeluaran yang dikelompokkan berdasarkan kategori untuk visualisasi pie chart.
+
+**Endpoint:** `GET /dashboard/expenses-by-category`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Query Parameters:**
+
+- `fromDate` (optional, string): YYYY-MM-DD
+- `toDate` (optional, string): YYYY-MM-DD
+- `accountId` (optional, string): Filter by account ID
+
+**Response (200):**
+
+```json
+{
+  "data": [
+    {
+      "categoryId": "507f1f77bcf86cd799439012",
+      "categoryName": "Makanan",
+      "categoryIcon": "🍔",
+      "totalAmount": 500000
+    },
+    {
+      "categoryId": "507f1f77bcf86cd799439013",
+      "categoryName": "Transportasi",
+      "categoryIcon": "🚗",
+      "totalAmount": 300000
+    }
+  ],
+  "total": 2
+}
+```
+
+**Note:**
+
+- Data diurutkan berdasarkan `totalAmount` dari terbesar ke terkecil.
+- Kategori yang tidak memiliki transaksi pengeluaran tidak akan ditampilkan.
+
+---
+
+### 3. Get Income vs Expenses
+
+Mendapatkan data tren pemasukan vs pengeluaran untuk visualisasi grafik bar atau line chart.
+
+**Endpoint:** `GET /dashboard/income-vs-expenses`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Query Parameters:**
+
+- `fromDate` (optional, string): YYYY-MM-DD
+- `toDate` (optional, string): YYYY-MM-DD
+- `accountId` (optional, string): Filter by account ID
+- `periodType` (optional, string): "daily" (default) atau "monthly"
+
+**Response (200):**
+
+```json
+{
+  "data": [
+    {
+      "period": "2025-10-28",
+      "income": 500000,
+      "expenses": 100000
+    },
+    {
+      "period": "2025-10-29",
+      "income": 0,
+      "expenses": 150000
+    },
+    {
+      "period": "2025-10-30",
+      "income": 500000,
+      "expenses": 250000
+    }
+  ],
+  "total": 3
+}
+```
+
+**Note:**
+
+- Jika `periodType="monthly"`, format periode adalah `YYYY-MM`.
+- Jika `periodType="daily"` (default), format periode adalah `YYYY-MM-DD`.
+- Data diurutkan berdasarkan periode secara ascending.
+
+---
+
+### 4. Get Recent Transactions
+
+Mendapatkan daftar transaksi terbaru dengan pagination.
+
+**Endpoint:** `GET /dashboard/recent-transactions`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Query Parameters:**
+
+- `fromDate` (optional, string): YYYY-MM-DD
+- `toDate` (optional, string): YYYY-MM-DD
+- `accountId` (optional, string): Filter by account ID
+- `limit` (optional, number): default: 10
+- `page` (optional, number): default: 1
+
+**Response (200):**
+
+```json
+{
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439015",
+      "accountId": {
+        "_id": "507f1f77bcf86cd799439013",
+        "title": "BCA Savings",
+        "icon": "🏦"
+      },
+      "accountSnapshot": null,
+      "categoryId": {
+        "_id": "507f1f77bcf86cd799439011",
+        "title": "Gaji",
+        "icon": "💰",
+        "type": "incomes"
+      },
+      "categorySnapshot": null,
+      "amount": 500000,
+      "note": "Gaji bulan Oktober",
+      "paymentDate": "2025-10-30T00:00:00.000Z",
+      "createdAt": "2025-10-30T12:00:00.000Z",
+      "updatedAt": "2025-10-30T12:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "total": 25,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 3
+  }
+}
+```
+
+**Note:**
+
+- Transaksi diurutkan berdasarkan `paymentDate` dan `createdAt` secara descending (terbaru di atas).
+- `categorySnapshot` dan `accountSnapshot` berisi nama jika category/account sudah dihapus.
 
 ---
 

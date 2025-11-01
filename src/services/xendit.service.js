@@ -95,7 +95,7 @@ export const createInvoice = async (data) => {
         failureRedirectUrl,
       },
     });
-  console.log('invoice', invoice);    
+    
     return {
       success: true,
       data: {

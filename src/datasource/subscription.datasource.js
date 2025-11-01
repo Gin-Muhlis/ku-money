@@ -6,7 +6,6 @@ import Subscription from '../models/Subscription.model.js';
 export const findActiveSubscriptionByUserId = async (userId) => {
   return await Subscription.findOne({
     'createdBy._id': userId,
-    isActive: true,
   });
 };
 

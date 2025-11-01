@@ -39,3 +39,38 @@ export const getUserSubscription = async (req, res) => {
   }
 };
 
+/**
+ * Get expired status for current user
+ */
+export const getUserExpired = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Cari subscription aktif user
+    const subscription = await subscriptionDatasource.findActiveSubscriptionByUserId(userId);
+
+    if (!subscription) {
+      return res.status(404).json({
+        message: 'No active subscription found',
+        code: 'NO_SUBSCRIPTION',
+      });
+    }
+
+    // Cek apakah sudah expired
+    const now = new Date();
+    const isExpired = subscription.expiredAt < now;
+
+    res.status(200).json({
+      expiredAt: subscription.expiredAt,
+      isExpired: isExpired,
+      remainingDays: isExpired ? 0 : Math.ceil((subscription.expiredAt - now) / (1000 * 60 * 60 * 24)),
+    });
+  } catch (error) {
+    console.error('Get User Expired Error:', error);
+    res.status(500).json({
+      message: error.message,
+      code: 'INTERNAL_ERROR',
+    });
+  }
+};
+
