@@ -14,6 +14,204 @@ Backend untuk aplikasi manajemen keuangan pribadi berbasis SaaS. Aplikasi ini me
 - **Nodemailer** - Email service
 - **Joi** - Validation
 
+## ✨ Features
+
+### 🔐 Authentication & Authorization
+
+- User registration dengan email verification
+- Login dengan JWT (access token & refresh token)
+- Email verification dengan token
+- Refresh token mechanism untuk auto-renew access token
+- Password update dengan validasi password lama
+- Logout dengan penghapusan refresh token
+- Resend verification email dengan rate limiting (1 request per minute)
+- Get current user profile
+
+### 💳 Subscription Management
+
+- 3 tier subscription packages: Free, Pro, dan Unlimited
+- Automatic subscription creation saat registrasi (package Free)
+- Subscription limit management (category, account, transaction limits)
+- Get subscription info dan expired status
+- Limit enforcement berdasarkan package
+
+### 🛒 Order & Payment
+
+- Create order untuk upgrade atau extend subscription
+- Integration dengan Xendit payment gateway
+- Support multiple payment methods (Virtual Account, E-Wallet, Credit Card)
+- Webhook handler untuk payment notifications
+- Order status tracking (unpaid, paid, failed, expired, cancelled)
+- Get order history dengan pagination
+- Get last order untuk tracking payment status
+
+### 💼 Account Management
+
+- Create, read, update, delete accounts
+- Account balance tracking
+- Auto-update balance saat create/update/delete transaction
+- Limit enforcement berdasarkan subscription package
+- Support multiple account types (bank, e-wallet, cash)
+- Total balance calculation
+
+### 🏷️ Category Management
+
+- Create, read, update, delete categories
+- Support 2 category types: incomes dan expenses
+- Limit enforcement berdasarkan subscription package
+- Category total amount calculation
+- Filter categories by type
+
+### 💸 Transaction Management
+
+- Create, read, update, delete transactions
+- Auto-update account balance saat create/update/delete transaction
+- Transaction limit enforcement (incomes/expenses per transaction)
+- Balance validation untuk expense transactions
+- Group transactions by date
+- Pagination support
+- Filter by category type, account, dan date range
+- Category & account snapshot untuk historical data (jika category/account dihapus)
+
+### 📊 Dashboard Analytics
+
+- **Summary**: Total balance, income, expenses, dan transaction count
+- **Expenses by Category**: Pengelompokan expense per kategori untuk pie chart
+- **Income vs Expenses**: Perbandingan tren income vs expenses per periode (daily/monthly)
+- **Recent Transactions**: Daftar transaksi terbaru dengan pagination
+- Filter by date range dan account
+- Support multiple period types (daily, monthly)
+
+### 📧 Email Service
+
+- Email verification dengan HTML template
+- Subscription expiring reminder (1 hari sebelum expired)
+- Subscription expired notification (7 hari berturut-turut setelah expired)
+- Modern HTML email templates
+- Rate limiting untuk prevent spam
+
+### ⏰ Automated Tasks (Cron Jobs)
+
+- Auto-check subscriptions yang akan expired (setiap 1 menit)
+- Auto-send reminder email 1 hari sebelum expired (sekali)
+- Auto-check subscriptions yang sudah expired (setiap 1 menit)
+- Auto-send expired notification email (setiap hari selama 7 hari)
+- Auto-update user status ke "free" dan subscription.isActive ke false saat expired
+
+### 🛡️ Security & Validation
+
+- JWT-based authentication
+- Password hashing dengan bcrypt (salt rounds: 10)
+- Request validation dengan Joi
+- Limit enforcement middleware
+- Account balance validation
+- Transaction limit validation
+- Input sanitization
+
+### 📈 Limit Management
+
+- Dynamic limit berdasarkan subscription package
+- Real-time limit checking
+- Limit response dengan current count dan remaining
+- Support unlimited untuk package Unlimited (nilai 0)
+
+---
+
+## 📁 Project Structure
+
+```
+ku-money/
+├── src/
+│   ├── config/
+│   │   └── db.js                    # Database connection configuration
+│   │
+│   ├── controllers/                 # Business logic handlers
+│   │   ├── auth/
+│   │   │   ├── auth.controller.js          # Register, login, logout, refresh, update password
+│   │   │   └── verifyEmail.controller.js   # Email verification
+│   │   ├── account/
+│   │   │   └── account.controller.js       # CRUD accounts
+│   │   ├── category/
+│   │   │   └── category.controller.js      # CRUD categories
+│   │   ├── transaction/
+│   │   │   └── transaction.controller.js   # CRUD transactions
+│   │   ├── package/
+│   │   │   └── package.controller.js       # Get packages
+│   │   ├── order/
+│   │   │   ├── order.controller.js         # Create order, get orders
+│   │   │   └── webhook.controller.js       # Xendit webhook handler
+│   │   ├── subscription/
+│   │   │   └── subscription.controller.js  # Get subscription info
+│   │   └── dashboard/
+│   │       └── dashboard.controller.js     # Dashboard analytics
+│   │
+│   ├── datasource/                  # Database access layer (abstraction)
+│   │   ├── user.datasource.js
+│   │   ├── userAccess.datasource.js
+│   │   ├── subscription.datasource.js
+│   │   ├── subscriptionPackage.datasource.js
+│   │   ├── order.datasource.js
+│   │   ├── category.datasource.js
+│   │   ├── account.datasource.js
+│   │   └── transaction.datasource.js
+│   │
+│   ├── dto/                         # Data Transfer Objects (validation schemas)
+│   │   ├── auth.dto.js
+│   │   ├── category.dto.js
+│   │   ├── account.dto.js
+│   │   ├── order.dto.js
+│   │   └── transaction.dto.js
+│   │
+│   ├── middlewares/                 # Express middlewares
+│   │   ├── auth/
+│   │   │   ├── auth.middleware.js                 # JWT authentication
+│   │   │   └── refreshToken.middleware.js         # Refresh token validation
+│   │   ├── validator.middleware.js                # Request validation dengan Joi
+│   │   ├── checkCategoryLimit.middleware.js       # Validasi limit kategori
+│   │   ├── checkAccountLimit.middleware.js        # Validasi limit akun
+│   │   ├── checkAccountBalanceLimit.middleware.js  # Validasi saldo akun
+│   │   └── checkTransactionLimit.middleware.js    # Validasi limit transaksi
+│   │
+│   ├── models/                      # Mongoose models/schemas
+│   │   ├── User.model.js
+│   │   ├── UserAccess.model.js
+│   │   ├── Subscription.model.js
+│   │   ├── SubscriptionPackage.model.js
+│   │   ├── Order.model.js
+│   │   ├── Category.model.js
+│   │   ├── Account.model.js
+│   │   └── Transaction.model.js
+│   │
+│   ├── routes/                      # Route definitions
+│   │   ├── auth.routes.js
+│   │   ├── package.routes.js
+│   │   ├── order.routes.js
+│   │   ├── subscription.routes.js
+│   │   ├── category.routes.js
+│   │   ├── account.routes.js
+│   │   ├── transaction.routes.js
+│   │   └── dashboard.routes.js
+│   │
+│   ├── services/                    # External services
+│   │   ├── email.service.js         # Email service (Nodemailer)
+│   │   ├── xendit.service.js        # Xendit payment integration
+│   │   └── scheduler.service.js     # Cron jobs untuk email reminders
+│   │
+│   ├── utils/                       # Utility functions
+│   │   └── token.js                 # JWT token generation & verification
+│   │
+│   ├── app.js                       # Express app configuration
+│   └── server.js                    # Entry point aplikasi
+│
+├── subscription-packages.json       # Seed data untuk packages
+├── .env                             # Environment variables (not in git)
+├── .gitignore
+├── package.json
+└── README.md
+```
+
+---
+
 ## 📦 Installation
 
 ```bash
@@ -1736,82 +1934,6 @@ Authorization: Bearer {accessToken}
 | `NO_SUBSCRIPTION`               | Tidak ada subscription aktif  |
 | `XENDIT_ERROR`                  | Error dari Xendit API         |
 | `INTERNAL_ERROR`                | Internal server error         |
-
----
-
-## 📁 Project Structure
-
-```
-ku-money/
-├── src/
-│   ├── config/
-│   │   └── db.js
-│   ├── controllers/
-│   │   ├── auth/
-│   │   │   ├── auth.controller.js
-│   │   │   └── verifyEmail.controller.js
-│   │   ├── order/
-│   │   │   ├── order.controller.js
-│   │   │   └── webhook.controller.js
-│   │   ├── package/
-│   │   │   └── package.controller.js
-│   │   ├── category/
-│   │   │   └── category.controller.js
-│   │   ├── account/
-│   │   │   └── account.controller.js
-│   │   └── transaction/
-│   │       └── transaction.controller.js
-│   ├── datasource/
-│   │   ├── user.datasource.js
-│   │   ├── userAccess.datasource.js
-│   │   ├── subscription.datasource.js
-│   │   ├── subscriptionPackage.datasource.js
-│   │   ├── order.datasource.js
-│   │   ├── category.datasource.js
-│   │   ├── account.datasource.js
-│   │   └── transaction.datasource.js
-│   ├── dto/
-│   │   ├── auth.dto.js
-│   │   ├── category.dto.js
-│   │   ├── account.dto.js
-│   │   ├── order.dto.js
-│   │   └── transaction.dto.js
-│   ├── middlewares/
-│   │   ├── auth/
-│   │   │   ├── auth.middleware.js
-│   │   │   └── refreshToken.middleware.js
-│   │   ├── validator.middleware.js
-│   │   ├── checkCategoryLimit.middleware.js
-│   │   ├── checkAccountLimit.middleware.js
-│   │   └── checkTransactionLimit.middleware.js
-│   ├── models/
-│   │   ├── User.model.js
-│   │   ├── UserAccess.model.js
-│   │   ├── Subscription.model.js
-│   │   ├── SubscriptionPackage.model.js
-│   │   ├── Order.model.js
-│   │   ├── Category.model.js
-│   │   ├── Account.model.js
-│   │   └── Transaction.model.js
-│   ├── routes/
-│   │   ├── auth.routes.js
-│   │   ├── package.routes.js
-│   │   ├── order.routes.js
-│   │   ├── category.routes.js
-│   │   ├── account.routes.js
-│   │   └── transaction.routes.js
-│   ├── services/
-│   │   ├── email.service.js
-│   │   └── xendit.service.js
-│   ├── utils/
-│   │   └── token.js
-│   ├── app.js
-│   └── server.js
-├── .env
-├── .gitignore
-├── package.json
-└── README.md
-```
 
 ---
 
