@@ -16,6 +16,12 @@ import {
 import { authMiddleware } from '../middlewares/auth/auth.middleware.js';
 import { refreshTokenMiddleware } from '../middlewares/auth/refreshToken.middleware.js';
 import { validate } from '../middlewares/validator.middleware.js';
+import { 
+  registerRateLimiter, 
+  loginRateLimiter, 
+  passwordRateLimiter,
+  authRateLimiter 
+} from '../middlewares/rateLimit.middleware.js';
 
 // DTO imports
 import { 
@@ -30,17 +36,17 @@ import {
 const router = express.Router();
 
 // Public routes (no auth required)
-router.post('/register', validate(registerDto), register);
-router.post('/login', validate(loginDto), login);
-router.post('/verify', validate(verifyEmailDto), verifyEmail);
-router.post('/resend-verification', validate(resendVerificationDto), resendVerificationEmail);
+router.post('/register', registerRateLimiter, validate(registerDto), register);
+router.post('/login', loginRateLimiter, validate(loginDto), login);
+router.post('/verify', authRateLimiter, validate(verifyEmailDto), verifyEmail);
+router.post('/resend-verification', authRateLimiter, validate(resendVerificationDto), resendVerificationEmail);
 
 // Protected routes (auth required)
 router.get('/me', authMiddleware, getUserById);
 router.post('/logout', authMiddleware, logout);
-router.put('/password', authMiddleware, validate(updatePasswordDto), updatePassword);
+router.put('/password', passwordRateLimiter, authMiddleware, validate(updatePasswordDto), updatePassword);
 
 // Refresh token route (uses refresh token middleware)
-router.post('/refresh', validate(refreshDto), refreshTokenMiddleware, refresh);
+router.post('/refresh', authRateLimiter, validate(refreshDto), refreshTokenMiddleware, refresh);
 
 export default router;
