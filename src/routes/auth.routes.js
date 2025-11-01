@@ -5,6 +5,7 @@ import {
   logout,
   refresh,
   updatePassword,
+  getUserById,
 } from '../controllers/auth/auth.controller.js';
 import {
   verifyEmail,
@@ -35,6 +36,7 @@ router.post('/verify', validate(verifyEmailDto), verifyEmail);
 router.post('/resend-verification', validate(resendVerificationDto), resendVerificationEmail);
 
 // Protected routes (auth required)
+router.get('/me', authMiddleware, getUserById);
 router.post('/logout', authMiddleware, logout);
 router.put('/password', authMiddleware, validate(updatePasswordDto), updatePassword);
 

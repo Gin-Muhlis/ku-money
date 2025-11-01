@@ -41,6 +41,18 @@ const subscriptionSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    lastExpiringEmailSent: {
+      type: Date,
+      default: null,
+    },
+    lastExpiredEmailSent: {
+      type: Date,
+      default: null,
+    },
+    expiredEmailCount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

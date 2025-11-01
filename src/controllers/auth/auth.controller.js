@@ -60,6 +60,7 @@ export const register = async (req, res) => {
       limitIncomes: freePackage.incomes,
       limitExpenses: freePackage.expenses,
       limitAccount: freePackage.account,
+      expiredEmailCount: 0,
     });
 
     const payload = {
@@ -321,6 +322,40 @@ export const updatePassword = async (req, res) => {
     });
   } catch (error) {
     console.error('Update Password Error:', error);
+    res.status(500).json({
+      message: error.message,
+      code: 'INTERNAL_ERROR',
+    });
+  }
+};
+
+/**
+ * Get user by ID
+ */
+export const getUserById = async (req, res) => {
+  try {
+    const user = await userDatasource.findUserById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+
+    res.status(200).json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        status: user.status,
+        verified: user.verified,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error('Get User Error:', error);
     res.status(500).json({
       message: error.message,
       code: 'INTERNAL_ERROR',

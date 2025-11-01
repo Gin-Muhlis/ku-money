@@ -16,12 +16,25 @@ export const verifyEmail = async (req, res) => {
     }
 
     if (user.verified) {
-      return res.status(200).json({ isVerified: true });
+      return res.status(200).json({ 
+        isVerified: true,
+        message: 'Email already verified'
+      });
     }
 
     await userDatasource.verifyUser(user._id);
 
-    res.status(200).json({ isVerified: true });
+    res.status(200).json({ 
+      isVerified: true,
+      message: 'Email verified successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        status: user.status,
+        verified: true,
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

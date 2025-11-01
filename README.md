@@ -109,7 +109,7 @@ Mendaftarkan user baru dan otomatis membuat free subscription.
 
 Verifikasi email dengan token yang dikirim via email.
 
-**Endpoint:** `POST /auth/verify/:token`
+**Endpoint:** `POST /auth/verify`
 
 **Body:**
 
@@ -123,7 +123,24 @@ Verifikasi email dengan token yang dikirim via email.
 
 ```json
 {
-  "isVerified": true
+  "isVerified": true,
+  "message": "Email verified successfully",
+  "user": {
+    "id": "507f1f77bcf86cd799439011",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "status": "free",
+    "verified": true
+  }
+}
+```
+
+**Response jika sudah verified (200):**
+
+```json
+{
+  "isVerified": true,
+  "message": "Email already verified"
 }
 ```
 
@@ -316,6 +333,45 @@ Authorization: Bearer {accessToken}
       "message": "New password must be at least 6 characters"
     }
   ]
+}
+```
+
+---
+
+### 8. Get Me
+
+Mendapatkan data user yang sedang login.
+
+**Endpoint:** `GET /auth/me`
+
+**Headers:**
+
+```
+Authorization: Bearer {accessToken}
+```
+
+**Response (200):**
+
+```json
+{
+  "user": {
+    "id": "507f1f77bcf86cd799439011",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "status": "free",
+    "verified": true,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+**Error - Not Found (404):**
+
+```json
+{
+  "message": "User not found",
+  "code": "USER_NOT_FOUND"
 }
 ```
 

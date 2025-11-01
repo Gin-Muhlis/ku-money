@@ -22,7 +22,7 @@ export const createSubscription = async (subscriptionData) => {
 export const updateSubscription = async (subscriptionId, updateData) => {
   return await Subscription.updateOne(
     { _id: subscriptionId },
-    updateData
+    { $set: updateData }
   );
 };
 
@@ -41,5 +41,45 @@ export const updateSubscriptionByUserId = async (userId, updateData) => {
  */
 export const findSubscriptionsByUserId = async (userId) => {
   return await Subscription.find({ 'createdBy._id': userId });
+};
+
+/**
+ * Find subscriptions expiring in 1 day
+ */
+export const findSubscriptionsExpiringSoon = async () => {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  // Set time to start of day
+  tomorrow.setHours(0, 0, 0, 0);
+  const tomorrowEnd = new Date(tomorrow);
+  tomorrowEnd.setHours(23, 59, 59, 999);
+  
+  return await Subscription.find({
+    isActive: true,
+    expiredAt: {
+      $gte: tomorrow,
+      $lte: tomorrowEnd,
+    }
+  });
+};
+
+/**
+ * Find subscriptions that just expired (before today ends)
+ * Note: No isActive filter to allow sending emails after subscription becomes inactive
+ * Filter by expiredEmailCount < 7 to only get subscriptions that still need emails
+ */
+export const findJustExpiredSubscriptions = async () => {
+  const now = new Date();
+  
+  return await Subscription.find({
+    expiredAt: {
+      $lt: now,
+    },
+    expiredEmailCount: {
+      $lt: 7,
+    }
+  });
 };
 

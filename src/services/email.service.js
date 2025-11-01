@@ -23,86 +23,58 @@ export const sendVerificationEmail = async (email, token) => {
     to: email,
     subject: 'Verify Your KU MONEY Account',
     html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Email Verification - KU MONEY</title>
-        </head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f4;">
-          <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f4f4f4; padding: 20px;">
-            <tr>
-              <td align="center">
-                <table role="presentation" style="width: 600px; max-width: 100%; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                  <!-- Header -->
-                  <tr>
-                    <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-                      <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: 1px;">
-                        KU MONEY
-                      </h1>
-                      <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 16px; opacity: 0.9;">
-                        Personal Finance Management
-                      </p>
-                    </td>
-                  </tr>
-                  
-                  <!-- Content -->
-                  <tr>
-                    <td style="padding: 40px 30px;">
-                      <h2 style="margin: 0 0 20px 0; color: #333333; font-size: 24px; font-weight: 600;">
-                        Verify Your Email Address
-                      </h2>
-                      <p style="margin: 0 0 20px 0; color: #666666; font-size: 16px; line-height: 1.6;">
-                        Terima kasih telah mendaftar di <strong>KU MONEY</strong>! Untuk memastikan keamanan akun Anda, kami perlu memverifikasi alamat email Anda.
-                      </p>
-                      <p style="margin: 0 0 30px 0; color: #666666; font-size: 16px; line-height: 1.6;">
-                        Klik tombol di bawah ini untuk memverifikasi email dan mulai menggunakan layanan kami.
-                      </p>
-                      
-                      <!-- Button -->
-                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                        <tr>
-                          <td align="center" style="padding: 0;">
-                            <a href="${verificationUrl}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.4); transition: all 0.3s ease;">
-                              Verifikasi Email Saya
-                            </a>
-                          </td>
-                        </tr>
-                      </table>
-                      
-                      <!-- Alternative Link -->
-                      <p style="margin: 30px 0 0 0; color: #999999; font-size: 14px; line-height: 1.6; text-align: center;">
-                        Atau salin dan tempel link berikut di browser Anda:<br>
-                        <a href="${verificationUrl}" style="color: #667eea; text-decoration: none; word-break: break-all;">
-                          ${verificationUrl}
-                        </a>
-                      </p>
-                      
-                      <!-- Warning -->
-                      <p style="margin: 30px 0 0 0; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; color: #856404; font-size: 14px; line-height: 1.6;">
-                        <strong>Peringatan:</strong> Link verifikasi ini akan kedaluwarsa dalam 24 jam. Jika Anda tidak meminta verifikasi ini, abaikan email ini.
-                      </p>
-                    </td>
-                  </tr>
-                  
-                  <!-- Footer -->
-                  <tr>
-                    <td style="padding: 30px; background-color: #f8f9fa; border-top: 1px solid #e9ecef; text-align: center;">
-                      <p style="margin: 0 0 10px 0; color: #6c757d; font-size: 14px; line-height: 1.6;">
-                        © 2025 KU MONEY. All rights reserved.
-                      </p>
-                      <p style="margin: 0; color: #999999; font-size: 12px; line-height: 1.6;">
-                        Email ini dikirim secara otomatis, mohon jangan membalas email ini.
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-      </html>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); padding: 40px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: 2px;">
+            KU MONEY
+          </h1>
+          <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px;">
+            Personal Finance Management
+          </p>
+        </div>
+        
+        <div style="background-color: #ffffff; padding: 30px 20px; border-radius: 0 0 8px 8px;">
+          <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 22px; font-weight: 600;">
+            Verify Your Email Address
+          </h2>
+          <p style="margin: 0 0 15px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+            Terima kasih telah mendaftar di <strong>KU MONEY</strong>! Untuk memastikan keamanan akun Anda, kami perlu memverifikasi alamat email Anda.
+          </p>
+          <p style="margin: 0 0 25px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+            Klik tombol di bawah ini untuk memverifikasi email dan mulai menggunakan layanan kami.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" style="display: inline-block; padding: 14px 32px; background-color: #6366f1; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
+              Verifikasi Email Saya
+            </a>
+          </div>
+          
+          <p style="margin: 25px 0 0 0; color: #9ca3af; font-size: 13px; line-height: 1.6; text-align: center;">
+            Atau salin dan tempel link berikut di browser Anda:
+          </p>
+          <p style="margin: 5px 0 0 0; text-align: center;">
+            <a href="${verificationUrl}" style="color: #6366f1; text-decoration: none; font-size: 12px; word-break: break-all;">
+              ${verificationUrl}
+            </a>
+          </p>
+          
+          <div style="margin: 25px 0 0 0; padding: 12px; background-color: #fef3c7; border-left: 3px solid #f59e0b; color: #92400e;">
+            <p style="margin: 0; font-size: 13px; line-height: 1.5;">
+              <strong>Peringatan:</strong> Link verifikasi ini akan kedaluwarsa dalam 24 jam.
+            </p>
+          </div>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 20px; text-align: center;">
+          <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px;">
+            © 2025 KU MONEY. All rights reserved.
+          </p>
+          <p style="margin: 0; color: #9ca3af; font-size: 11px;">
+            Email ini dikirim secara otomatis, mohon jangan membalas.
+          </p>
+        </div>
+      </div>
     `,
   };
 
@@ -115,5 +87,125 @@ export const sendVerificationEmail = async (email, token) => {
       statusCode: 400,
       message: 'Error sending verification email:'
     })
+  }
+};
+
+/**
+ * Send subscription expiration reminder email (1 day before)
+ */
+export const sendSubscriptionExpiringEmail = async (email, userName, expiredDate) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Pengingat: Subscription Anda Akan Kedaluwarsa Besok',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%); padding: 40px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: 2px;">
+            KU MONEY
+          </h1>
+          <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px;">
+            Personal Finance Management
+          </p>
+        </div>
+        
+        <div style="background-color: #ffffff; padding: 30px 20px; border-radius: 0 0 8px 8px;">
+          <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 22px; font-weight: 600;">
+            ⏰ Subscription Akan Kedaluwarsa
+          </h2>
+          <p style="margin: 0 0 15px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+            Halo <strong>${userName}</strong>,
+          </p>
+          <p style="margin: 0 0 15px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+            Kami ingin memberitahu Anda bahwa subscription <strong>KU MONEY</strong> Anda akan kedaluwarsa dalam <strong style="color: #6366f1;">1 hari</strong> (${expiredDate}).
+          </p>
+          <p style="margin: 0 0 25px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+            Agar Anda dapat terus menikmati fitur premium kami, segera perpanjang subscription Anda sekarang!
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.CLIENT_URL}/app/subscription" style="display: inline-block; padding: 14px 32px; background-color: #6366f1; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
+              Perpanjang Sekarang
+            </a>
+          </div>
+        
+        <div style="margin-top: 20px; padding: 20px; text-align: center;">
+          <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px;">
+            © 2025 KU MONEY. All rights reserved.
+          </p>
+          <p style="margin: 0; color: #9ca3af; font-size: 11px;">
+            Email ini dikirim secara otomatis, mohon jangan membalas.
+          </p>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Subscription expiring email sent to:', email);
+  } catch (error) {
+    console.error('Error sending subscription expiring email:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send subscription expired notification email
+ */
+export const sendSubscriptionExpiredEmail = async (email, userName) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Pemberitahuan: Subscription Anda Telah Kedaluwarsa',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); padding: 40px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: 2px;">
+            KU MONEY
+          </h1>
+          <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 14px;">
+            Personal Finance Management
+          </p>
+        </div>
+        
+        <div style="background-color: #ffffff; padding: 30px 20px; border-radius: 0 0 8px 8px;">
+          <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 22px; font-weight: 600;">
+            ⚠️ Subscription Telah Kedaluwarsa
+          </h2>
+          <p style="margin: 0 0 15px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+            Halo <strong>${userName}</strong>,
+          </p>
+          <p style="margin: 0 0 15px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+            Kami informasikan bahwa subscription <strong>KU MONEY</strong> Anda telah kedaluwarsa.
+          </p>
+          <p style="margin: 0 0 25px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+            Untuk kembali menikmati fitur premium dan manfaat yang lebih banyak, silakan upgrade atau perpanjang subscription Anda.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.CLIENT_URL}/app/subscription" style="display: inline-block; padding: 14px 32px; background-color: #8b5cf6; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
+              Upgrade Sekarang
+            </a>
+          </div>
+          
+        <div style="margin-top: 20px; padding: 20px; text-align: center;">
+          <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 12px;">
+            © 2025 KU MONEY. All rights reserved.
+          </p>
+          <p style="margin: 0; color: #9ca3af; font-size: 11px;">
+            Email ini dikirim secara otomatis, mohon jangan membalas.
+          </p>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Subscription expired email sent to:', email);
+  } catch (error) {
+    console.error('Error sending subscription expired email:', error);
+    throw error;
   }
 };
