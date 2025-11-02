@@ -70,3 +70,12 @@ export const updateAccountBalance = async (accountId, userId, balanceChange) => 
   );
 };
 
+/**
+ * Get total balance of all accounts by user ID
+ */
+export const getTotalBalanceByUserId = async (userId) => {
+  const accounts = await Account.find({ 'createdBy._id': userId });
+  const totalBalance = accounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+  return totalBalance;
+};
+

@@ -1,5 +1,6 @@
 import * as subscriptionDatasource from '../datasource/subscription.datasource.js';
 import * as transactionDatasource from '../datasource/transaction.datasource.js';
+import * as accountDatasource from '../datasource/account.datasource.js';
 import Category from '../models/Category.model.js';
 
 /**
@@ -10,12 +11,19 @@ import Category from '../models/Category.model.js';
 export const checkTransactionLimit = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { categoryId } = req.body;
+    const { categoryId, amount } = req.body;
 
     if (!categoryId) {
       return res.status(400).json({
         message: 'Category ID is required',
         code: 'CATEGORY_ID_REQUIRED',
+      });
+    }
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        message: 'Amount is required and must be greater than 0',
+        code: 'INVALID_AMOUNT',
       });
     }
 
@@ -59,20 +67,29 @@ export const checkTransactionLimit = async (req, res, next) => {
       return next();
     }
 
-    // Count current transactions of this type
-    const currentCount = await transactionDatasource.countTransactionsByUserIdAndType(
-      userId,
-      categoryType
-    );
+    // Check limit based on category type
+    let currentTotal = 0;
+
+    if (categoryType === 'incomes') {
+      // For incomes: check if total balance + new amount exceeds limit
+      const totalBalance = await accountDatasource.getTotalBalanceByUserId(userId);
+      currentTotal = totalBalance + amount;
+    } else if (categoryType === 'expenses') {
+      // For expenses: check if total expenses + new amount exceeds limit
+      const totalExpenses = await transactionDatasource.getTotalExpensesByUserId(userId);
+      currentTotal = totalExpenses + amount;
+    }
 
     // Check if user has reached the limit
-    if (currentCount >= limit) {
+    if (currentTotal > limit) {
       return res.status(403).json({
         message: `Transaction limit reached for ${categoryType}`,
         code: 'TRANSACTION_LIMIT_REACHED',
         type: categoryType,
         limit: limit,
-        current: currentCount,
+        current: currentTotal - amount,
+        newAmount: amount,
+        afterUpdate: currentTotal,
       });
     }
 

@@ -244,3 +244,17 @@ export const getTotalAmountsByCategoryIds = async (userId, categoryIds) => {
   return amountsByCategory;
 };
 
+/**
+ * Get total amount of expenses transactions by user ID
+ */
+export const getTotalExpensesByUserId = async (userId) => {
+  const transactions = await Transaction.find({ 'createdBy._id': userId })
+    .populate('categoryId', 'type');
+
+  const totalExpenses = transactions
+    .filter((t) => t.categoryId && t.categoryId.type === 'expenses')
+    .reduce((sum, transaction) => sum + (transaction.amount || 0), 0);
+
+  return totalExpenses;
+};
+

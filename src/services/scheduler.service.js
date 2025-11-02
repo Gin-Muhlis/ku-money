@@ -11,7 +11,6 @@ export const initSchedulers = () => {
 
   // Cron job 1: Check for subscriptions expiring in 1 day (runs every 1 minute)
   cron.schedule('* * * * *', async () => {
-    console.log('Running scheduler: Check subscriptions expiring in 1 day...');
     try {
       const subscriptions = await subscriptionDatasource.findSubscriptionsExpiringSoon();
       
@@ -37,7 +36,6 @@ export const initSchedulers = () => {
             
             // Skip if email already sent today
             if (lastSentDate.getTime() === today.getTime()) {
-              console.log(`Expiring email already sent today to: ${user.email}`);
               continue;
             }
           }
@@ -66,8 +64,6 @@ export const initSchedulers = () => {
           console.error('Error sending expiring email:', error);
         }
       }
-
-      console.log('Expiring subscription check completed');
     } catch (error) {
       console.error('Error in expiring subscription scheduler:', error);
     }
@@ -75,7 +71,6 @@ export const initSchedulers = () => {
 
   // Cron job 2: Check for subscriptions that just expired (runs every 1 minute)
   cron.schedule('* * * * *', async () => {
-    console.log('Running scheduler: Check expired subscriptions...');
     try {
       const subscriptions = await subscriptionDatasource.findJustExpiredSubscriptions();
       
@@ -86,7 +81,6 @@ export const initSchedulers = () => {
           const user = await userDatasource.findUserById(subscription.createdBy._id);
           
           if (!user) {
-            console.error('User not found for subscription:', subscription._id);
             continue;
           }
 
@@ -103,7 +97,6 @@ export const initSchedulers = () => {
               
               // Skip if email already sent today
               if (lastSentDate.getTime() === today.getTime()) {
-                console.log(`Expired email already sent today to: ${user.email}`);
                 continue;
               }
             }
@@ -126,7 +119,6 @@ export const initSchedulers = () => {
             // If first email, also set isActive to false
             if (currentEmailCount === 0) {
               updateData.isActive = false;
-              console.log(`Subscription ${subscription._id} set to inactive`);
             }
 
             // Update lastExpiredEmailSent and increment count (and isActive if first email)
@@ -138,13 +130,9 @@ export const initSchedulers = () => {
           console.error('Error sending expired email:', error);
         }
       }
-
-      console.log('Expired subscription check completed');
     } catch (error) {
       console.error('Error in expired subscription scheduler:', error);
     }
   });
-
-  console.log('Schedulers initialized successfully');
 };
 
