@@ -24,12 +24,11 @@ export const findUserAccessByRefreshToken = async (refreshToken) => {
 /**
  * Update refresh token
  */
-export const updateRefreshToken = async (oldRefreshToken, newRefreshToken, userAgent = 'unknown') => {
+export const updateRefreshToken = async (oldRefreshToken, newRefreshToken) => {
   return await UserAccess.updateOne(
     { refreshToken: oldRefreshToken },
     {
       refreshToken: newRefreshToken,
-      'user.userAgent': userAgent,
       updatedAt: new Date(),
     }
   );

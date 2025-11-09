@@ -11,10 +11,6 @@ import * as packageDatasource from '../../datasource/subscriptionPackage.datasou
 // Initialize Google OAuth client
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
-if (!GOOGLE_CLIENT_ID) {
-  console.warn('Warning: GOOGLE_CLIENT_ID is not set in environment variables. Google OAuth will not work.');
-}
-
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 /**
