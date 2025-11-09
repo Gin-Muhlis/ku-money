@@ -112,3 +112,15 @@ export const updatePasswordDto = Joi.object({
     }),
 });
 
+/**
+ * DTO for Google OAuth login
+ */
+export const googleLoginDto = Joi.object({
+  idToken: Joi.string()
+    .required()
+    .messages({
+      'string.empty': 'Google ID token is required',
+      'any.required': 'Google ID token is required',
+    }),
+});
+

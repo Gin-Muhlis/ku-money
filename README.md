@@ -10,6 +10,7 @@ Backend untuk aplikasi manajemen keuangan pribadi berbasis SaaS. Aplikasi ini me
 - **Mongoose** - ODM
 - **JWT** - Authentication
 - **Bcrypt** - Password hashing
+- **Google Auth Library** - Google OAuth authentication
 - **Xendit** - Payment gateway
 - **Nodemailer** - Email service
 - **Joi** - Validation
@@ -20,6 +21,7 @@ Backend untuk aplikasi manajemen keuangan pribadi berbasis SaaS. Aplikasi ini me
 
 - User registration dengan email verification
 - Login dengan JWT (access token & refresh token)
+- **Google OAuth login/register** - Login atau register menggunakan akun Google
 - Email verification dengan token
 - Refresh token mechanism untuk auto-renew access token
 - Password update dengan validasi password lama
@@ -128,6 +130,7 @@ ku-money/
 │   ├── controllers/                 # Business logic handlers
 │   │   ├── auth/
 │   │   │   ├── auth.controller.js          # Register, login, logout, refresh, update password
+│   │   │   ├── googleAuth.controller.js    # Google OAuth login/register
 │   │   │   └── verifyEmail.controller.js   # Email verification
 │   │   ├── account/
 │   │   │   └── account.controller.js       # CRUD accounts
@@ -249,6 +252,11 @@ EMAIL_PASS=your_email_password
 # Xendit
 XENDIT_KEY=your_xendit_secret_key
 XENDIT_CALLBACK_TOKEN=your_xendit_callback_token
+
+# Google OAuth
+# Hanya GOOGLE_CLIENT_ID yang diperlukan (untuk ID Token verification)
+# Dapatkan dari Google Cloud Console: https://console.cloud.google.com/
+GOOGLE_CLIENT_ID=your_google_client_id
 
 # Client URL
 CLIENT_URL=http://localhost:5173
@@ -384,9 +392,104 @@ Login user dengan email dan password.
 }
 ```
 
+**Error - OAuth User (400):**
+
+Jika user login via Google OAuth, mereka tidak bisa login dengan password biasa:
+
+```json
+{
+  "message": "This account uses Google login. Please login with Google instead.",
+  "code": "OAUTH_USER"
+}
+```
+
 ---
 
-### 4. Refresh Token
+### 4. Google OAuth Login/Register
+
+Login atau register menggunakan akun Google. Jika user belum terdaftar, sistem akan otomatis membuat akun baru dengan status verified. Jika user sudah terdaftar, hanya akan generate token tanpa membuat dokumen baru.
+
+**Endpoint:** `POST /auth/google`
+
+**Body:**
+
+```json
+{
+  "idToken": "google_id_token_dari_client"
+}
+```
+
+**Response - User Baru (200):**
+
+```json
+{
+  "message": "User registered and logged in via Google",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "507f1f77bcf86cd799439011",
+    "name": "John Doe",
+    "email": "john@gmail.com",
+    "status": "free",
+    "verified": true
+  }
+}
+```
+
+**Response - User Existing (200):**
+
+```json
+{
+  "message": "User logged in via Google",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "507f1f77bcf86cd799439011",
+    "name": "John Doe",
+    "email": "john@gmail.com",
+    "status": "free",
+    "verified": true
+  }
+}
+```
+
+**Error - No ID Token (400):**
+
+```json
+{
+  "message": "Google ID token is required",
+  "code": "NO_ID_TOKEN"
+}
+```
+
+**Error - Invalid Token (400):**
+
+```json
+{
+  "message": "Invalid Google token",
+  "code": "INVALID_TOKEN"
+}
+```
+
+**Error - OAuth Not Configured (500):**
+
+```json
+{
+  "message": "Google OAuth is not configured. Please contact administrator.",
+  "code": "OAUTH_NOT_CONFIGURED"
+}
+```
+
+**Note:**
+
+- User yang login via Google OAuth tidak memiliki password dan tidak bisa login dengan password biasa
+- User yang login via Google OAuth otomatis verified (`verified: true`)
+- User yang login via Google OAuth tidak bisa update password
+- Sistem akan otomatis membuat subscription free untuk user baru yang register via Google
+
+---
+
+### 5. Refresh Token
 
 Generate access token baru menggunakan refresh token.
 
@@ -418,7 +521,7 @@ Generate access token baru menggunakan refresh token.
 
 ---
 
-### 5. Logout
+### 6. Logout
 
 Logout user dan hapus refresh token dari database.
 
@@ -449,7 +552,7 @@ Authorization: Bearer {accessToken}
 
 ---
 
-### 6. Resend Verification Email
+### 7. Resend Verification Email
 
 Kirim ulang email verifikasi.
 
@@ -473,7 +576,7 @@ Kirim ulang email verifikasi.
 
 ---
 
-### 7. Update Password
+### 8. Update Password
 
 Update password user (memerlukan password lama untuk verifikasi).
 
@@ -534,9 +637,20 @@ Authorization: Bearer {accessToken}
 }
 ```
 
+**Error - OAuth User (400):**
+
+User yang login via Google OAuth tidak bisa update password:
+
+```json
+{
+  "message": "This account uses Google login. Cannot update password.",
+  "code": "OAUTH_USER"
+}
+```
+
 ---
 
-### 8. Get Me
+### 9. Get Me
 
 Mendapatkan data user yang sedang login.
 
@@ -1911,29 +2025,32 @@ Authorization: Bearer {accessToken}
 
 ## 🔑 Error Codes
 
-| Code                            | Description                   |
-| ------------------------------- | ----------------------------- |
-| `NO_TOKEN`                      | Access token tidak ditemukan  |
-| `INVALID_FORMAT`                | Format token tidak valid      |
-| `TOKEN_EXPIRED`                 | Token sudah expired           |
-| `INVALID_TOKEN`                 | Token tidak valid             |
-| `NO_REFRESH_TOKEN`              | Refresh token tidak ditemukan |
-| `REFRESH_TOKEN_EXPIRED`         | Refresh token expired         |
-| `CATEGORY_LIMIT_REACHED`        | Limit category tercapai       |
-| `ACCOUNT_LIMIT_REACHED`         | Limit account tercapai        |
-| `ACCOUNT_BALANCE_LIMIT_REACHED` | Total balance limit tercapai  |
-| `TRANSACTION_LIMIT_REACHED`     | Limit transaction tercapai    |
-| `INVALID_OLD_PASSWORD`          | Old password salah            |
-| `SAME_PASSWORD`                 | New password sama dengan old  |
-| `USER_NOT_FOUND`                | User tidak ditemukan          |
-| `ACCOUNT_NOT_FOUND`             | Account tidak ditemukan       |
-| `CATEGORY_NOT_FOUND`            | Category tidak ditemukan      |
-| `TRANSACTION_NOT_FOUND`         | Transaction tidak ditemukan   |
-| `ORDER_NOT_FOUND`               | Order tidak ditemukan         |
-| `PACKAGE_NOT_FOUND`             | Package tidak ditemukan       |
-| `NO_SUBSCRIPTION`               | Tidak ada subscription aktif  |
-| `XENDIT_ERROR`                  | Error dari Xendit API         |
-| `INTERNAL_ERROR`                | Internal server error         |
+| Code                            | Description                                                    |
+| ------------------------------- | -------------------------------------------------------------- |
+| `NO_TOKEN`                      | Access token tidak ditemukan                                   |
+| `INVALID_FORMAT`                | Format token tidak valid                                       |
+| `TOKEN_EXPIRED`                 | Token sudah expired                                            |
+| `INVALID_TOKEN`                 | Token tidak valid                                              |
+| `NO_REFRESH_TOKEN`              | Refresh token tidak ditemukan                                  |
+| `REFRESH_TOKEN_EXPIRED`         | Refresh token expired                                          |
+| `CATEGORY_LIMIT_REACHED`        | Limit category tercapai                                        |
+| `ACCOUNT_LIMIT_REACHED`         | Limit account tercapai                                         |
+| `ACCOUNT_BALANCE_LIMIT_REACHED` | Total balance limit tercapai                                   |
+| `TRANSACTION_LIMIT_REACHED`     | Limit transaction tercapai                                     |
+| `INVALID_OLD_PASSWORD`          | Old password salah                                             |
+| `SAME_PASSWORD`                 | New password sama dengan old                                   |
+| `OAUTH_USER`                    | User login via OAuth (tidak bisa login/update dengan password) |
+| `NO_ID_TOKEN`                   | Google ID token tidak ditemukan                                |
+| `OAUTH_NOT_CONFIGURED`          | Google OAuth tidak dikonfigurasi                               |
+| `USER_NOT_FOUND`                | User tidak ditemukan                                           |
+| `ACCOUNT_NOT_FOUND`             | Account tidak ditemukan                                        |
+| `CATEGORY_NOT_FOUND`            | Category tidak ditemukan                                       |
+| `TRANSACTION_NOT_FOUND`         | Transaction tidak ditemukan                                    |
+| `ORDER_NOT_FOUND`               | Order tidak ditemukan                                          |
+| `PACKAGE_NOT_FOUND`             | Package tidak ditemukan                                        |
+| `NO_SUBSCRIPTION`               | Tidak ada subscription aktif                                   |
+| `XENDIT_ERROR`                  | Error dari Xendit API                                          |
+| `INTERNAL_ERROR`                | Internal server error                                          |
 
 ---
 

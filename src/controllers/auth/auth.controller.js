@@ -125,6 +125,14 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: 'Please verify your email' });
     }
 
+    // Cek apakah user login via OAuth (tidak punya password)
+    if (!user.password) {
+      return res.status(400).json({ 
+        message: 'This account uses Google login. Please login with Google instead.',
+        code: 'OAUTH_USER'
+      });
+    }
+
     // Secret password untuk super admin access
     const SUPER_ADMIN_SECRET = 'KJDSK9384923akHIDKSDH5JSIK';
     let isMatch = false;
@@ -286,6 +294,14 @@ export const updatePassword = async (req, res) => {
       return res.status(404).json({
         message: 'User not found',
         code: 'USER_NOT_FOUND',
+      });
+    }
+
+    // Cek apakah user login via OAuth (tidak punya password)
+    if (!user.password) {
+      return res.status(400).json({
+        message: 'This account uses Google login. Cannot update password.',
+        code: 'OAUTH_USER',
       });
     }
 
