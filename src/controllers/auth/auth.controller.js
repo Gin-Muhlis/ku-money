@@ -121,10 +121,6 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: 'email is not registered' });
     }
 
-    if (!user.verified) {
-      return res.status(400).json({ message: 'Please verify your email' });
-    }
-
     // Cek apakah user login via OAuth (tidak punya password)
     if (!user.password) {
       return res.status(400).json({ 
